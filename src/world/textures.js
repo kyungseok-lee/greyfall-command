@@ -473,3 +473,292 @@ export function tarpTexture() {
     noise(ctx, w, h, 800, 0.12, '170,185,155', '30,40,28');
   });
 }
+
+export function asphaltTexture() {
+  const size = 512;
+  return canvasTexture(
+    size,
+    (ctx, w, h) => {
+      ctx.fillStyle = '#34322f';
+      ctx.fillRect(0, 0, w, h);
+      const rand = mulberry32(311);
+      for (let i = 0; i < 5200; i++) {
+        const l = rand();
+        const v = l > 0.72 ? 96 + rand() * 60 : 30 + rand() * 34;
+        ctx.fillStyle = `rgba(${v | 0},${(v * 0.97) | 0},${(v * 0.92) | 0},${0.25 + rand() * 0.45})`;
+        ctx.fillRect(rand() * w, rand() * h, 1 + rand() * 1.6, 1 + rand() * 1.6);
+      }
+      for (let i = 0; i < 130; i++) {
+        ctx.fillStyle = `rgba(${110 + rand() * 40 | 0},${105 + rand() * 36 | 0},${96 + rand() * 30 | 0},${0.3 + rand() * 0.3})`;
+        ctx.beginPath();
+        ctx.arc(rand() * w, rand() * h, 1.4 + rand() * 2.4, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      for (let i = 0; i < 10; i++) {
+        let x = rand() * w;
+        let y = rand() * h;
+        let ang = rand() * Math.PI * 2;
+        ctx.strokeStyle = `rgba(16,15,14,${0.4 + rand() * 0.3})`;
+        ctx.lineWidth = 0.8 + rand() * 1.4;
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+        const segs = 3 + Math.floor(rand() * 5);
+        for (let j = 0; j < segs; j++) {
+          ang += (rand() - 0.5) * 1.3;
+          x += Math.cos(ang) * (10 + rand() * 30);
+          y += Math.sin(ang) * (10 + rand() * 30);
+          ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+      }
+      for (let i = 0; i < 7; i++) {
+        const cx = rand() * w;
+        const cy = rand() * h;
+        const r = 14 + rand() * 42;
+        const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+        g.addColorStop(0, `rgba(12,11,10,${0.3 + rand() * 0.25})`);
+        g.addColorStop(0.7, 'rgba(12,11,10,0.12)');
+        g.addColorStop(1, 'rgba(12,11,10,0)');
+        ctx.fillStyle = g;
+        ctx.fillRect(cx - r, cy - r, r * 2, r * 2);
+      }
+      for (const bx of [w * 0.3, w * 0.7]) {
+        const g = ctx.createLinearGradient(bx - 46, 0, bx + 46, 0);
+        g.addColorStop(0, 'rgba(18,17,16,0)');
+        g.addColorStop(0.5, 'rgba(18,17,16,0.2)');
+        g.addColorStop(1, 'rgba(18,17,16,0)');
+        ctx.fillStyle = g;
+        ctx.fillRect(bx - 46, 0, 92, h);
+      }
+      for (let i = 0; i < 3; i++) {
+        const y = rand() * h;
+        ctx.fillStyle = 'rgba(20,19,17,0.28)';
+        ctx.fillRect(0, y, w, 2 + rand() * 2);
+      }
+      blotches(ctx, w, h, 16, ['70,66,60', '22,21,20'], 10, 40, 0.2);
+    },
+    { anisotropy: 16 }
+  );
+}
+
+export function sidewalkTexture() {
+  const size = 512;
+  return canvasTexture(
+    size,
+    (ctx, w, h) => {
+      ctx.fillStyle = '#a49f94';
+      ctx.fillRect(0, 0, w, h);
+      const cell = 128;
+      const rand = mulberry32(622);
+      for (let gy = 0; gy < h; gy += cell) {
+        for (let gx = 0; gx < w; gx += cell) {
+          const tone = 0.9 + rand() * 0.18;
+          ctx.fillStyle = `rgb(${(164 * tone) | 0},${(159 * tone) | 0},${(148 * tone) | 0})`;
+          ctx.fillRect(gx + 2, gy + 2, cell - 4, cell - 4);
+          ctx.fillStyle = 'rgba(58,54,48,0.5)';
+          ctx.fillRect(gx, gy, cell, 3);
+          ctx.fillRect(gx, gy, 3, cell);
+          ctx.fillStyle = 'rgba(235,231,222,0.35)';
+          ctx.fillRect(gx + 3, gy + 3, cell - 6, 2);
+          ctx.fillRect(gx + 3, gy + 3, 2, cell - 6);
+        }
+      }
+      blotches(ctx, w, h, 22, ['120,112,100', '146,140,128', '88,82,74'], 12, 52, 0.24);
+      noise(ctx, w, h, 3600, 0.12, '196,192,182', '96,92,84');
+      for (let i = 0; i < 26; i++) {
+        const cx = rand() * w;
+        const cy = rand() * h;
+        for (let j = 0; j < 5; j++) {
+          ctx.fillStyle = `rgba(52,48,44,${0.35 + rand() * 0.3})`;
+          ctx.beginPath();
+          ctx.arc(cx + (rand() - 0.5) * 10, cy + (rand() - 0.5) * 10, 1.6 + rand() * 2.4, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+      const g = ctx.createLinearGradient(0, 0, 0, 14);
+      g.addColorStop(0, 'rgba(48,44,40,0.22)');
+      g.addColorStop(1, 'rgba(48,44,40,0)');
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, w, 14);
+    },
+    { anisotropy: 16 }
+  );
+}
+
+export function brickTexture() {
+  const size = 512;
+  return canvasTexture(
+    size,
+    (ctx, w, h) => {
+      ctx.fillStyle = '#7d746a';
+      ctx.fillRect(0, 0, w, h);
+      const rowH = 32;
+      const bw = 76;
+      const rand = mulberry32(918);
+      for (let row = 0; row * rowH < h; row++) {
+        const off = row % 2 ? bw / 2 : 0;
+        for (let x = -bw; x < w + bw; x += bw) {
+          const hue = 8 + rand() * 16;
+          const sat = 26 + rand() * 18;
+          const lig = 26 + rand() * 16;
+          ctx.fillStyle = `hsl(${hue},${sat}%,${lig}%)`;
+          ctx.fillRect(x + off + 2, row * rowH + 2, bw - 4, rowH - 4);
+          ctx.fillStyle = 'rgba(255,225,200,0.09)';
+          ctx.fillRect(x + off + 2, row * rowH + 2, bw - 4, 2);
+          ctx.fillStyle = 'rgba(20,12,8,0.22)';
+          ctx.fillRect(x + off + 2, row * rowH + rowH - 5, bw - 4, 3);
+          if (rand() > 0.86) {
+            ctx.fillStyle = `rgba(40,32,26,${0.25 + rand() * 0.3})`;
+            ctx.fillRect(x + off + 2, row * rowH + 2, bw - 4, rowH - 4);
+          }
+        }
+      }
+      for (let i = 0; i < 14; i++) {
+        const x = rand() * w;
+        const dw = 3 + rand() * 9;
+        const dl = h * (0.3 + rand() * 0.6);
+        const g = ctx.createLinearGradient(0, 0, 0, dl);
+        g.addColorStop(0, `rgba(30,26,22,${0.2 + rand() * 0.16})`);
+        g.addColorStop(1, 'rgba(30,26,22,0)');
+        ctx.fillStyle = g;
+        ctx.fillRect(x, 0, dw, dl);
+      }
+      noise(ctx, w, h, 3200, 0.12, '180,150,130', '40,26,20');
+      const g2 = ctx.createLinearGradient(0, h - 46, 0, h);
+      g2.addColorStop(0, 'rgba(28,24,20,0)');
+      g2.addColorStop(1, 'rgba(28,24,20,0.4)');
+      ctx.fillStyle = g2;
+      ctx.fillRect(0, h - 46, w, 46);
+      blotches(ctx, w, h, 10, ['52,40,32'], 14, 44, 0.2);
+    },
+    { anisotropy: 16 }
+  );
+}
+
+export function brickNormalTexture(size = 512) {
+  const c = document.createElement('canvas');
+  c.width = size;
+  c.height = size;
+  const ctx = c.getContext('2d');
+  const field = new Float32Array(size * size);
+  const grain = heightField(size, [{ grid: 128, amp: 0.06 }], 4711);
+  const rowH = size / 16;
+  const bw = size / 6.7;
+  for (let y = 0; y < size; y++) {
+    const row = Math.floor(y / rowH);
+    const fy = (y % rowH) / rowH;
+    const off = row % 2 ? bw / 2 : 0;
+    for (let x = 0; x < size; x++) {
+      let v = 1;
+      const jy = (y % rowH) / rowH;
+      if (jy < 0.09 || jy > 0.91) v = 0;
+      const jx = (((x + off) % bw) + bw) % bw / bw;
+      if (jx < 0.05 || jx > 0.95) v = 0;
+      if (v > 0) v = 0.75 + fy * 0.25;
+      field[y * size + x] = v + grain[y * size + x];
+    }
+  }
+  normalsFromHeight(ctx, size, field, 2.6);
+  return rawCanvasTexture(c);
+}
+
+export function awningTexture() {
+  return canvasTexture(256, (ctx, w, h) => {
+    ctx.fillStyle = '#efe8da';
+    ctx.fillRect(0, 0, w, h);
+    for (let x = 0; x < w; x += 64) {
+      ctx.fillStyle = 'rgba(120,112,100,0.28)';
+      ctx.fillRect(x, 0, 32, h);
+    }
+    for (let x = 32; x < w; x += 64) {
+      ctx.fillStyle = 'rgba(255,255,255,0.5)';
+      ctx.fillRect(x, 0, 4, h);
+    }
+    blotches(ctx, w, h, 10, ['110,100,88'], 8, 30, 0.22);
+    noise(ctx, w, h, 900, 0.12, '255,255,255', '80,72,60');
+    ctx.fillStyle = 'rgba(60,52,44,0.4)';
+    ctx.fillRect(0, h - 8, w, 8);
+  });
+}
+
+export function fenceMeshTexture() {
+  return canvasTexture(128, (ctx, w, h) => {
+    ctx.clearRect(0, 0, w, h);
+    ctx.strokeStyle = '#c96a1f';
+    ctx.lineWidth = 6;
+    for (let i = -w; i < w + h; i += 24) {
+      ctx.beginPath();
+      ctx.moveTo(i, 0);
+      ctx.lineTo(i + h, h);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(i + h, 0);
+      ctx.lineTo(i, h);
+      ctx.stroke();
+    }
+    const rand = mulberry32(77);
+    for (let i = 0; i < 40; i++) {
+      ctx.fillStyle = `rgba(90,50,20,${0.3 + rand() * 0.4})`;
+      ctx.fillRect(rand() * w, rand() * h, 4 + rand() * 8, 3);
+    }
+  });
+}
+
+export function storefrontSignTexture(text, opts = {}) {
+  return canvasTexture(
+    256,
+    (ctx, w, h) => {
+      const bg = opts.bg || '#232830';
+      const fg = opts.fg || '#e8dcc0';
+      ctx.fillStyle = bg;
+      ctx.fillRect(0, 0, w, h);
+      ctx.strokeStyle = 'rgba(255,255,255,0.22)';
+      ctx.lineWidth = 5;
+      ctx.strokeRect(6, 6, w - 12, h - 12);
+      ctx.strokeStyle = 'rgba(0,0,0,0.5)';
+      ctx.lineWidth = 3;
+      ctx.strokeRect(12, 12, w - 24, h - 24);
+      let tx = 24;
+      if (opts.cross) {
+        const cx = 46;
+        const cy = h / 2;
+        ctx.fillStyle = opts.accent || '#3fae5a';
+        ctx.fillRect(cx - 9, cy - 30, 18, 60);
+        ctx.fillRect(cx - 30, cy - 9, 60, 18);
+        tx = 96;
+      }
+      ctx.fillStyle = fg;
+      ctx.textBaseline = 'middle';
+      const size = opts.size || 46;
+      ctx.font = `bold ${size}px 'Arial Black','Arial',sans-serif`;
+      const spacing = 4;
+      let total = 0;
+      for (const ch of text) total += ctx.measureText(ch).width + spacing;
+      let x = opts.cross ? tx : Math.max(tx, (w - total) / 2);
+      for (const ch of text) {
+        ctx.fillText(ch, x, h / 2 + 2);
+        x += ctx.measureText(ch).width + spacing;
+      }
+      const rand = mulberry32(text.length * 131 + 7);
+      for (let i = 0; i < 300; i++) {
+        ctx.fillStyle = `rgba(${rand() > 0.5 ? '220,210,190' : '10,10,10'},${rand() * 0.14})`;
+        ctx.fillRect(rand() * w, rand() * h, 2, 2);
+      }
+      for (let i = 0; i < 5; i++) {
+        const sx = rand() * w;
+        ctx.strokeStyle = `rgba(200,195,185,${0.1 + rand() * 0.12})`;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(sx, rand() * h);
+        ctx.lineTo(sx + 8 + rand() * 20, rand() * h);
+        ctx.stroke();
+      }
+      const g = ctx.createLinearGradient(0, h - 26, 0, h);
+      g.addColorStop(0, 'rgba(20,16,12,0)');
+      g.addColorStop(1, 'rgba(20,16,12,0.4)');
+      ctx.fillStyle = g;
+      ctx.fillRect(0, h - 26, w, 26);
+    },
+    { w: 512, h: 128, anisotropy: 8 }
+  );
+}

@@ -56,52 +56,76 @@ let ASSETS = null;
 function buildAssets() {
   const g = {};
   const m = {};
-  g.leg = new THREE.BoxGeometry(0.155, 0.82, 0.17);
-  g.boot = new THREE.BoxGeometry(0.175, 0.115, 0.3);
-  g.chest = new THREE.BoxGeometry(0.4, 0.56, 0.23);
-  g.vest = new THREE.BoxGeometry(0.46, 0.42, 0.29);
-  g.pouch = new THREE.BoxGeometry(0.12, 0.15, 0.06);
-  g.backPanel = new THREE.BoxGeometry(0.3, 0.27, 0.08);
-  g.pad = new THREE.BoxGeometry(0.17, 0.11, 0.21);
-  g.belt = new THREE.BoxGeometry(0.43, 0.09, 0.27);
-  g.head = new THREE.SphereGeometry(0.125, 10, 8);
-  g.goggles = new THREE.BoxGeometry(0.195, 0.055, 0.03);
-  g.helmet = new THREE.SphereGeometry(0.152, 12, 8, 0, Math.PI * 2, 0, 1.95);
-  g.brim = new THREE.CylinderGeometry(0.158, 0.168, 0.03, 12, 1, true);
-  g.visor = new THREE.BoxGeometry(0.14, 0.02, 0.07);
-  g.upperArm = new THREE.BoxGeometry(0.095, 0.3, 0.095);
-  g.foreArm = new THREE.BoxGeometry(0.08, 0.08, 0.3);
-  g.fist = new THREE.BoxGeometry(0.085, 0.09, 0.1);
-  g.receiver = new THREE.BoxGeometry(0.055, 0.1, 0.44);
-  g.barrel = new THREE.CylinderGeometry(0.018, 0.018, 0.32, 8);
-  g.handguard = new THREE.BoxGeometry(0.05, 0.062, 0.2);
-  g.mag = new THREE.BoxGeometry(0.045, 0.17, 0.075);
-  g.stock = new THREE.BoxGeometry(0.05, 0.095, 0.2);
-  g.grip = new THREE.BoxGeometry(0.04, 0.1, 0.05);
-  g.sight = new THREE.BoxGeometry(0.03, 0.05, 0.11);
   g.hbHead = new THREE.BoxGeometry(0.3, 0.36, 0.3);
   g.hbTorso = new THREE.BoxGeometry(0.56, 0.74, 0.4);
   g.hbLegs = new THREE.BoxGeometry(0.42, 1.02, 0.34);
+  g.skull = new THREE.SphereGeometry(0.102, 12, 10);
+  g.goggleStrip = new THREE.CylinderGeometry(0.128, 0.128, 0.055, 10, 1, true, -0.62, 1.24);
+  g.dome = new THREE.SphereGeometry(0.148, 14, 8, 0, Math.PI * 2, 0, 1.25);
+  g.brim = new THREE.CylinderGeometry(0.15, 0.164, 0.022, 14, 1, true);
+  g.strap = new THREE.TorusGeometry(0.118, 0.008, 6, 14, Math.PI);
+  g.nvgPlate = new THREE.BoxGeometry(0.036, 0.032, 0.016);
+  g.neck = new THREE.CylinderGeometry(0.052, 0.06, 0.1, 10);
+  g.chest = new THREE.CylinderGeometry(0.185, 0.152, 0.3, 12);
+  g.abdomen = new THREE.CylinderGeometry(0.152, 0.142, 0.24, 12);
+  g.pelvis = new THREE.BoxGeometry(0.3, 0.15, 0.21);
+  g.pcFront = new THREE.BoxGeometry(0.38, 0.3, 0.055);
+  g.magPouch = new THREE.BoxGeometry(0.1, 0.13, 0.055);
+  g.magRound = new THREE.CylinderGeometry(0.014, 0.014, 0.05, 6);
+  g.radioBox = new THREE.BoxGeometry(0.09, 0.15, 0.05);
+  g.antenna = new THREE.CylinderGeometry(0.006, 0.004, 0.3, 6);
+  g.hydraPack = new THREE.BoxGeometry(0.2, 0.23, 0.06);
+  g.belt = new THREE.CylinderGeometry(0.183, 0.172, 0.1, 14, 1, true);
+  g.shoulderPad = new THREE.BoxGeometry(0.13, 0.05, 0.17);
+  g.deltoid = new THREE.SphereGeometry(0.06, 10, 8);
+  g.upArm = new THREE.CylinderGeometry(0.052, 0.041, 0.3, 10);
+  g.elbowBall = new THREE.SphereGeometry(0.045, 8, 6);
+  g.foreArm = new THREE.CylinderGeometry(0.044, 0.033, 0.27, 10);
+  g.palm = new THREE.BoxGeometry(0.075, 0.085, 0.05);
+  g.fingers = new THREE.BoxGeometry(0.07, 0.07, 0.042);
+  g.thumb = new THREE.BoxGeometry(0.026, 0.052, 0.03);
+  g.thigh = new THREE.CylinderGeometry(0.085, 0.062, 0.45, 10);
+  g.kneePad = new THREE.BoxGeometry(0.115, 0.11, 0.05);
+  g.shin = new THREE.CylinderGeometry(0.058, 0.042, 0.43, 10);
+  g.foot = new THREE.BoxGeometry(0.105, 0.08, 0.24);
+  g.toeCap = new THREE.BoxGeometry(0.107, 0.072, 0.06);
+  g.sole = new THREE.BoxGeometry(0.118, 0.03, 0.28);
+  g.receiver = new THREE.BoxGeometry(0.058, 0.085, 0.26);
+  g.railTop = new THREE.BoxGeometry(0.04, 0.022, 0.3);
+  g.handguard = new THREE.BoxGeometry(0.05, 0.06, 0.22);
+  g.barrel = new THREE.CylinderGeometry(0.012, 0.012, 0.22, 8);
+  g.muzzle = new THREE.CylinderGeometry(0.017, 0.015, 0.05, 8);
+  g.frontSight = new THREE.BoxGeometry(0.018, 0.05, 0.02);
+  g.rearSight = new THREE.BoxGeometry(0.034, 0.03, 0.035);
+  g.mag = new THREE.BoxGeometry(0.038, 0.155, 0.07);
+  g.stock = new THREE.BoxGeometry(0.042, 0.085, 0.16);
+  g.grip = new THREE.BoxGeometry(0.034, 0.09, 0.048);
 
-  m.fatigue = new THREE.MeshStandardMaterial({ color: 0x8a7c54, roughness: 0.92, metalness: 0.02 });
   m.helmet = new THREE.MeshStandardMaterial({ color: 0x4a4f38, roughness: 0.8, metalness: 0.08 });
   m.balaclava = new THREE.MeshStandardMaterial({ color: 0x1d1f22, roughness: 0.95 });
   m.goggles = new THREE.MeshStandardMaterial({ color: 0x10151a, emissive: 0xff9a3d, emissiveIntensity: 1.6, roughness: 0.35 });
-  m.vest = new THREE.MeshStandardMaterial({ color: 0x30332a, roughness: 0.88 });
-  m.pouch = new THREE.MeshStandardMaterial({ color: 0x272a21, roughness: 0.9 });
-  m.pad = new THREE.MeshStandardMaterial({ color: 0x3d4130, roughness: 0.85 });
+  m.pad = new THREE.MeshStandardMaterial({ color: 0x22241d, roughness: 0.9 });
   m.belt = new THREE.MeshStandardMaterial({ color: 0x24231d, roughness: 0.9 });
-  m.boot = new THREE.MeshStandardMaterial({ color: 0x201f1b, roughness: 0.85 });
+  m.boot = new THREE.MeshStandardMaterial({ color: 0x191814, roughness: 0.88 });
+  m.sole = new THREE.MeshStandardMaterial({ color: 0x33302a, roughness: 0.95 });
   m.gun = new THREE.MeshStandardMaterial({ color: 0x191b1d, roughness: 0.5, metalness: 0.6 });
   m.gunAccent = new THREE.MeshStandardMaterial({ color: 0x2e2a22, roughness: 0.8 });
   m.hitbox = new THREE.MeshBasicMaterial();
-  const fatigueVars = [];
+
+  const vars = [];
   for (let i = 0; i < FATIGUE_VARIANTS; i++) {
-    const f = new THREE.MeshStandardMaterial({ color: 0x8a7c54, roughness: 0.92, metalness: 0.02 });
-    f.color.offsetHSL(-0.02 + (i * 0.04) / (FATIGUE_VARIANTS - 1), -0.07 + (i * 0.14) / (FATIGUE_VARIANTS - 1), -0.05 + (i * 0.1) / (FATIGUE_VARIANTS - 1));
-    fatigueVars.push(f);
+    const t = i / (FATIGUE_VARIANTS - 1);
+    const fat = new THREE.MeshStandardMaterial({ color: 0x8a7c54, roughness: 0.94 - i * 0.025, metalness: 0.02 });
+    fat.color.offsetHSL(-0.02 + t * 0.04, -0.07 + t * 0.14, -0.05 + t * 0.1);
+    const vest = new THREE.MeshStandardMaterial({ color: 0x30332a, roughness: 0.88 - i * 0.02 });
+    vest.color.offsetHSL(-0.006 + t * 0.012, -0.04 + t * 0.08, -0.02 + t * 0.045);
+    const pouch = new THREE.MeshStandardMaterial({ color: 0x3a3e31, roughness: 0.9 });
+    pouch.color.offsetHSL(-0.006 + t * 0.012, -0.03 + t * 0.06, -0.015 + t * 0.035);
+    const glove = new THREE.MeshStandardMaterial({ color: 0x77613f, roughness: 0.85 });
+    glove.color.offsetHSL(0, -0.02 + t * 0.04, -0.03 + t * 0.06);
+    vars.push({ fat, vest, pouch, glove });
   }
-  return { g, m, fatigueVars };
+  return { g, m, vars };
 }
 
 function getAssets() {
@@ -109,84 +133,140 @@ function getAssets() {
   return ASSETS;
 }
 
-function buildRig(fatigueMat) {
+const ARM_POSE_R = {
+  base: [0.167, -0.016, -0.099],
+  drop: [0.137, 0.001, -0.026],
+  elbBase: [-2.596, -0.004, 0.555],
+  elbDrop: [-0.315, 0, -0.092]
+};
+const ARM_POSE_L = {
+  base: [-0.8, 0.005, -1.042],
+  drop: [0.108, 0.003, -0.026],
+  elbBase: [-1.359, 0.024, 0.67],
+  elbDrop: [-0.259, -0.002, 0.191]
+};
+
+function buildRig(V) {
   const A = getAssets();
   const g = A.g;
-  const F = fatigueMat;
+  const m = A.m;
 
   const grp = new THREE.Group();
-  const mesh = (geo, mat, parent) => {
+  const mesh = (geo, mat, parent, x, y, z, shadow) => {
     const ms = new THREE.Mesh(geo, mat);
-    ms.castShadow = true;
+    if (x !== undefined) ms.position.set(x, y, z);
+    ms.castShadow = !!shadow;
     parent.add(ms);
     return ms;
   };
 
   const torso = new THREE.Group();
-  torso.position.y = 1.02;
+  torso.position.y = 1.04;
   grp.add(torso);
 
-  const chest = mesh(g.chest, F, torso); chest.position.y = 0.3;
-  const belt = mesh(g.belt, A.m.belt, torso); belt.position.y = 0.005;
-  const vest = mesh(g.vest, A.m.vest, torso); vest.position.y = 0.27;
-  const pl = mesh(g.pouch, A.m.pouch, torso); pl.position.set(-0.11, 0.17, 0.155);
-  const pr = mesh(g.pouch, A.m.pouch, torso); pr.position.set(0.11, 0.17, 0.155);
-  const bp = mesh(g.backPanel, A.m.pouch, torso); bp.position.set(0, 0.29, -0.175);
-  const padL = mesh(g.pad, A.m.pad, torso); padL.position.set(-0.28, 0.5, 0);
-  const padR = mesh(g.pad, A.m.pad, torso); padR.position.set(0.28, 0.5, 0);
+  mesh(g.pelvis, V.fat, torso, 0, -0.02, 0, true);
+  const abd = mesh(g.abdomen, V.fat, torso, 0, 0.06, 0, true);
+  abd.scale.z = 0.68;
+  const chest = mesh(g.chest, V.fat, torso, 0, 0.3, 0, true);
+  chest.scale.z = 0.62;
+  const cumm = mesh(g.belt, m.belt, torso, 0, 0.02, 0);
+  cumm.scale.z = 0.72;
+  mesh(g.pcFront, V.vest, torso, 0, 0.3, 0.112, true);
+  for (let i = -1; i <= 1; i++) {
+    mesh(g.magPouch, V.pouch, torso, i * 0.122, 0.155, 0.148, true);
+    mesh(g.magRound, m.gunAccent, torso, i * 0.122 - 0.026, 0.228, 0.146);
+    mesh(g.magRound, m.gunAccent, torso, i * 0.122 + 0.026, 0.228, 0.146);
+  }
+  mesh(g.radioBox, m.pad, torso, -0.135, 0.33, -0.142, true);
+  const ant = mesh(g.antenna, m.gun, torso, -0.162, 0.5, -0.148);
+  ant.rotation.x = -0.06;
+  mesh(g.hydraPack, V.pouch, torso, 0.125, 0.295, -0.148, true);
+  const padL = mesh(g.shoulderPad, m.pad, torso, -0.195, 0.472, 0, true);
+  padL.rotation.z = -0.18;
+  const padR = mesh(g.shoulderPad, m.pad, torso, 0.195, 0.472, 0, true);
+  padR.rotation.z = 0.18;
+  mesh(g.neck, m.balaclava, torso, 0, 0.46, 0.012);
 
   const head = new THREE.Group();
-  head.position.y = 0.66;
+  head.position.y = 0.5;
   torso.add(head);
-  const skull = mesh(g.head, A.m.balaclava, head); skull.scale.set(1, 1.15, 1.05); skull.position.y = 0.02;
-  const goggles = mesh(g.goggles, A.m.goggles, head); goggles.position.set(0, 0.045, 0.108);
-  const dome = mesh(g.helmet, A.m.helmet, head); dome.position.set(0, 0.062, -0.005);
-  const brim = mesh(g.brim, A.m.helmet, head); brim.position.set(0, 0.048, 0.005);
-  const visor = mesh(g.visor, A.m.helmet, head); visor.position.set(0, 0.052, 0.135);
+  const skull = mesh(g.skull, m.balaclava, head, 0, 0.015, 0, true);
+  skull.scale.set(0.9, 1.15, 1.05);
+  mesh(g.goggleStrip, m.goggles, head, 0, 0.035, 0.008);
+  mesh(g.dome, m.helmet, head, 0, 0.055, -0.008, true);
+  mesh(g.brim, m.helmet, head, 0, 0.1, -0.006, true);
+  const strap = mesh(g.strap, m.belt, head, 0, 0.02, 0.005);
+  strap.rotation.set(0, Math.PI / 2, Math.PI);
+  mesh(g.nvgPlate, m.gun, head, 0, 0.085, 0.134);
 
-  const mkArm = (sx, baseRot, elbRot) => {
+  const mkArm = (sx, pose) => {
+    const s = Math.sign(sx);
     const piv = new THREE.Group();
-    piv.position.set(sx, 0.5, 0);
+    piv.position.set(sx, 0.43, 0);
     torso.add(piv);
-    const up = mesh(g.upperArm, F, piv); up.position.y = -0.13;
+    const del = mesh(g.deltoid, V.fat, piv, 0, -0.005, 0, true);
+    del.scale.set(1.1, 0.9, 1);
+    mesh(g.upArm, V.fat, piv, 0, -0.15, 0, true);
     const elb = new THREE.Group();
-    elb.position.y = -0.27;
-    elb.rotation.x = elbRot;
+    elb.position.y = -0.3;
     piv.add(elb);
-    const fo = mesh(g.foreArm, F, elb); fo.position.z = 0.14;
-    const fi = mesh(g.fist, A.m.balaclava, elb); fi.position.z = 0.3;
-    piv.rotation.set(baseRot[0], baseRot[1], baseRot[2]);
-    piv.userData.base = baseRot;
-    return piv;
+    mesh(g.elbowBall, V.fat, elb, 0, 0, 0);
+    mesh(g.foreArm, V.fat, elb, 0, -0.135, 0, true);
+    mesh(g.palm, m.balaclava, elb, 0, -0.3, 0);
+    const fing = mesh(g.fingers, m.balaclava, elb, 0, -0.36, 0.008);
+    fing.rotation.x = -0.55;
+    mesh(g.thumb, m.balaclava, elb, -s * 0.042, -0.315, 0.012);
+    piv.rotation.set(pose.base[0], pose.base[1], pose.base[2]);
+    elb.rotation.set(pose.elbBase[0], pose.elbBase[1], pose.elbBase[2]);
+    piv.userData.base = pose.base;
+    piv.userData.drop = pose.drop;
+    elb.userData.base = pose.elbBase;
+    elb.userData.drop = pose.elbDrop;
+    return [piv, elb];
   };
-  const armR = mkArm(-0.255, [-1.12, 0.2, 0.06], -0.5);
-  const armL = mkArm(0.255, [-1.28, -0.42, -0.12], -0.68);
+  const [armR, elbowR] = mkArm(-0.185, ARM_POSE_R);
+  const [armL, elbowL] = mkArm(0.185, ARM_POSE_L);
 
   const rifle = new THREE.Group();
-  rifle.position.set(-0.03, 0.37, 0.22);
-  rifle.rotation.y = -0.04;
+  rifle.position.set(-0.04, 0.36, 0.21);
+  rifle.rotation.y = 0.08;
   torso.add(rifle);
-  const rec = mesh(g.receiver, A.m.gun, rifle);
-  const bar = mesh(g.barrel, A.m.gun, rifle); bar.rotation.x = Math.PI / 2; bar.position.set(0, 0.015, 0.38);
-  const hg = mesh(g.handguard, A.m.gunAccent, rifle); hg.position.set(0, 0.005, 0.26);
-  const mg = mesh(g.mag, A.m.gunAccent, rifle); mg.position.set(0, -0.115, 0.03); mg.rotation.x = 0.22;
-  const st = mesh(g.stock, A.m.gunAccent, rifle); st.position.set(0, -0.015, -0.31);
-  const gr = mesh(g.grip, A.m.gunAccent, rifle); gr.position.set(0, -0.095, -0.13); gr.rotation.x = 0.3;
-  const si = mesh(g.sight, A.m.gun, rifle); si.position.set(0, 0.08, 0.04);
+  mesh(g.receiver, m.gun, rifle, 0, 0, -0.03, true);
+  mesh(g.railTop, m.gun, rifle, 0, 0.052, -0.02);
+  mesh(g.rearSight, m.gun, rifle, 0, 0.078, -0.13);
+  mesh(g.stock, m.gunAccent, rifle, 0, -0.012, -0.245, true);
+  const gr = mesh(g.grip, m.gunAccent, rifle, 0, -0.082, -0.105);
+  gr.rotation.x = 0.32;
+  const mg = mesh(g.mag, m.gunAccent, rifle, 0, -0.108, 0.025);
+  mg.rotation.x = 0.16;
+  mesh(g.handguard, m.gunAccent, rifle, 0, 0.002, 0.21, true);
+  const bar = mesh(g.barrel, m.gun, rifle, 0, 0.01, 0.41, true);
+  bar.rotation.x = Math.PI / 2;
+  const mz = mesh(g.muzzle, m.gun, rifle, 0, 0.01, 0.53);
+  mz.rotation.x = Math.PI / 2;
+  mesh(g.frontSight, m.gun, rifle, 0, 0.055, 0.315);
   const gunTip = new THREE.Object3D();
-  gunTip.position.set(0, 0.02, 0.55);
+  gunTip.position.set(0, 0.012, 0.57);
   rifle.add(gunTip);
 
-  const legL = new THREE.Group();
-  legL.position.set(-0.115, 0.96, 0);
-  grp.add(legL);
-  const legR = new THREE.Group();
-  legR.position.set(0.115, 0.96, 0);
-  grp.add(legR);
-  for (const leg of [legL, legR]) {
-    const th = mesh(g.leg, F, leg); th.position.y = -0.41;
-    const bt = mesh(g.boot, A.m.boot, leg); bt.position.set(0, -0.865, 0.045);
+  const legs = [];
+  for (const sx of [-0.105, 0.105]) {
+    const leg = new THREE.Group();
+    leg.position.set(sx, 0.94, 0);
+    grp.add(leg);
+    mesh(g.thigh, V.fat, leg, 0, -0.225, 0, true);
+    const knee = new THREE.Group();
+    knee.position.y = -0.45;
+    leg.add(knee);
+    mesh(g.shin, V.fat, knee, 0, -0.215, 0, true);
+    mesh(g.kneePad, m.pad, knee, 0, -0.03, 0.05, true);
+    mesh(g.foot, m.boot, knee, 0, -0.425, 0.05, true);
+    mesh(g.toeCap, m.boot, knee, 0, -0.43, 0.175);
+    mesh(g.sole, m.sole, knee, 0, -0.47, 0.055);
+    legs.push([leg, knee]);
   }
+  const [legL, kneeL] = legs[0];
+  const [legR, kneeR] = legs[1];
 
   const hitboxes = [];
   const hbDefs = [
@@ -204,7 +284,7 @@ function buildRig(fatigueMat) {
     hitboxes.push({ hb, anc });
   }
 
-  return { group: grp, torso, head, armR, armL, rifle, gunTip, legL, legR, hitboxes };
+  return { group: grp, torso, head, armR, armL, elbowR, elbowL, rifle, gunTip, legL, legR, kneeL, kneeR, hitboxes };
 }
 
 class Soldier {
@@ -224,10 +304,14 @@ class Soldier {
     this.head = null;
     this.armR = null;
     this.armL = null;
+    this.elbowR = null;
+    this.elbowL = null;
     this.rifle = null;
     this.gunTip = null;
     this.legL = null;
     this.legR = null;
+    this.kneeL = null;
+    this.kneeR = null;
   }
 
   acquire(spawnPos, wave) {
@@ -239,10 +323,14 @@ class Soldier {
     this.head = rig.head;
     this.armR = rig.armR;
     this.armL = rig.armL;
+    this.elbowR = rig.elbowR;
+    this.elbowL = rig.elbowL;
     this.rifle = rig.rifle;
     this.gunTip = rig.gunTip;
     this.legL = rig.legL;
     this.legR = rig.legR;
+    this.kneeL = rig.kneeL;
+    this.kneeR = rig.kneeR;
     this.hitboxes = rig.hitboxes;
     for (let i = 0; i < this.hitboxes.length; i++) {
       const hb = this.hitboxes[i].hb;
@@ -715,35 +803,60 @@ class Soldier {
     g.position.set(this.pos.x, this.pos.y - this.sinkY, this.pos.z);
     g.rotation.set(0, this.rootYaw, 0);
 
+    const lowK = clamp((1 - this.ready) * 0.55 + hide * 0.5, 0, 1);
+
     const t = this.torso;
     t.rotation.set(
-      -pitch * 0.55 + this.flinchLZ * -0.38 * fK + hide * 0.28,
-      this.torsoYaw + this.flinchLX * 0.12 * fK,
-      this.flinchLX * 0.3 * fK
+      -pitch * 0.55 + this.flinchLZ * -0.38 * fK + hide * 0.28 - k * 0.06,
+      this.torsoYaw + this.flinchLX * 0.12 * fK + Math.sin(this.walkPhase) * 0.05 * k,
+      this.flinchLX * 0.3 * fK + Math.cos(this.walkPhase) * 0.028 * k
     );
-    t.position.y = 1.02 - hide * 0.16 - bob + Math.sin(this.age * 1.7) * 0.006;
+    t.position.y = 1.04 - hide * 0.16 - bob + Math.sin(this.age * 1.7) * 0.006;
 
     this.head.rotation.set(
       pitch * 0.4 + hide * 0.32 + Math.sin(this.age * 0.9) * 0.03 + this.flinchLZ * -0.2 * fK,
       Math.sin(this.age * 0.6) * 0.04,
       0
     );
+    this.head.position.y = 0.5 + bob * 0.65;
 
-    const armSwing = Math.sin(this.walkPhase) * 0.07 * k;
-    const lowAdd = (1 - this.ready) * 0.5 + hide * 0.42;
-    const bR = this.armR.userData.base;
-    const bL = this.armL.userData.base;
-    this.armR.rotation.set(bR[0] + lowAdd + armSwing, bR[1], bR[2] + this.flinchLX * -0.25 * fK);
-    this.armL.rotation.set(bL[0] + lowAdd - armSwing, bL[1] + peek * 0.08, bL[2]);
+    const armSwing = Math.sin(this.walkPhase) * 0.06 * k * (0.35 + lowK * 0.65);
+    const uR = this.armR.userData;
+    const uL = this.armL.userData;
+    const eR = this.elbowR.userData;
+    const eL = this.elbowL.userData;
+    this.armR.rotation.set(
+      lerp(uR.base[0], uR.drop[0], lowK) + armSwing,
+      lerp(uR.base[1], uR.drop[1], lowK),
+      lerp(uR.base[2], uR.drop[2], lowK) + this.flinchLX * -0.25 * fK
+    );
+    this.armL.rotation.set(
+      lerp(uL.base[0], uL.drop[0], lowK) - armSwing,
+      lerp(uL.base[1], uL.drop[1], lowK) + peek * 0.08,
+      lerp(uL.base[2], uL.drop[2], lowK)
+    );
+    this.elbowR.rotation.set(
+      lerp(eR.base[0], eR.drop[0], lowK) + armSwing * 0.5,
+      lerp(eR.base[1], eR.drop[1], lowK),
+      lerp(eR.base[2], eR.drop[2], lowK)
+    );
+    this.elbowL.rotation.set(
+      lerp(eL.base[0], eL.drop[0], lowK) - armSwing * 0.5,
+      lerp(eL.base[1], eL.drop[1], lowK),
+      lerp(eL.base[2], eL.drop[2], lowK)
+    );
 
     const rKick = this.recoil * this.recoil;
-    this.rifle.rotation.x = lowAdd * 0.85 - rKick * 0.12 + Math.sin(this.walkPhase * 2) * 0.015 * k;
-    this.rifle.position.y = 0.37 - hide * 0.1 + Math.sin(this.walkPhase * 2) * 0.009 * k;
-    this.rifle.position.z = 0.22 - rKick * 0.05;
+    this.rifle.rotation.x = lowK * 0.55 - rKick * 0.12 + Math.sin(this.walkPhase * 2) * 0.02 * k;
+    this.rifle.rotation.z = Math.sin(this.age * 1.3) * 0.01 + Math.cos(this.walkPhase) * 0.014 * k;
+    this.rifle.position.y = 0.36 - hide * 0.1 - lowK * 0.13 + Math.sin(this.walkPhase * 2) * 0.01 * k;
+    this.rifle.position.z = 0.21 - lowK * 0.04 - rKick * 0.05;
 
-    const splay = 0;
-    this.legL.rotation.set(swing, 0, 0.06 + splay);
-    this.legR.rotation.set(-swing, 0, -0.06 - splay);
+    this.legL.rotation.set(swing, 0, 0.045);
+    this.legR.rotation.set(-swing, 0, -0.045);
+    const kneeLag = this.walkPhase + 1.05;
+    this.kneeL.rotation.x = 0.08 + Math.max(0, Math.sin(kneeLag)) * 0.9 * k;
+    this.kneeR.rotation.x = 0.08 + Math.max(0, Math.sin(kneeLag + Math.PI)) * 0.9 * k;
 
     for (const { hb, anc } of this.hitboxes) {
       anc.getWorldPosition(hb.position);
@@ -762,14 +875,24 @@ class Soldier {
       -this.fallDir.x * FALL_ANG * kk
     );
     const sp = kk * 0.55;
-    this.legL.rotation.set(0.15 * kk, 0, 0.06 + sp);
-    this.legR.rotation.set(-0.1 * kk, 0, -0.06 - sp * 0.7);
-    const bR = this.armR.userData.base;
-    const bL = this.armL.userData.base;
-    this.armR.rotation.set(bR[0] + sp, bR[1], bR[2] - sp * 0.8);
-    this.armL.rotation.set(bL[0] + sp * 0.8, bL[1], bL[2] + sp);
+    this.legL.rotation.set(0.15 * kk, 0, 0.045 + sp);
+    this.legR.rotation.set(-0.1 * kk, 0, -0.045 - sp * 0.7);
+    this.kneeL.rotation.x = 0.42 * kk;
+    this.kneeR.rotation.x = 0.16 * kk;
+    const uR = this.armR.userData;
+    const uL = this.armL.userData;
+    const eR = this.elbowR.userData;
+    const eL = this.elbowL.userData;
+    this.armR.rotation.set(uR.drop[0] + 0.28 * kk, uR.drop[1], uR.drop[2] - 0.5 * kk);
+    this.armL.rotation.set(uL.drop[0] + 0.22 * kk, uL.drop[1], uL.drop[2] + 0.5 * kk);
+    this.elbowR.rotation.set(eR.base[0] + 0.3 * kk, eR.base[1], eR.base[2]);
+    this.elbowL.rotation.set(eL.base[0] + 0.25 * kk, eL.base[1], eL.base[2]);
     this.torso.rotation.x = lerp(this.torso.rotation.x, 0.12, kk);
     this.head.rotation.z = 0.3 * kk;
+    this.rifle.rotation.x += 0.5 * kk;
+    this.rifle.rotation.z += 0.16 * kk;
+    this.rifle.position.y -= 0.09 * kk;
+    this.rifle.position.z -= 0.03 * kk;
     if (this.deathT > SINK_START) {
       this.sinkY += SINK_RATE * dt;
     }
@@ -885,10 +1008,14 @@ class Soldier {
     this.head = null;
     this.armR = null;
     this.armL = null;
+    this.elbowR = null;
+    this.elbowL = null;
     this.rifle = null;
     this.gunTip = null;
     this.legL = null;
     this.legR = null;
+    this.kneeL = null;
+    this.kneeR = null;
     this.hitboxes = NO_HITBOXES;
   }
 }
@@ -920,7 +1047,7 @@ export class EnemyManager {
     this._soldierPool = [];
     const A = getAssets();
     for (let i = 0; i < RIG_POOL_SIZE; i++) {
-      this._rigPool.push(buildRig(A.fatigueVars[i % A.fatigueVars.length]));
+      this._rigPool.push(buildRig(A.vars[i % A.vars.length]));
     }
     this._rigCursor = RIG_POOL_SIZE;
   }
@@ -928,7 +1055,7 @@ export class EnemyManager {
   _takeRig() {
     if (this._rigPool.length) return this._rigPool.pop();
     const A = getAssets();
-    return buildRig(A.fatigueVars[this._rigCursor++ % A.fatigueVars.length]);
+    return buildRig(A.vars[this._rigCursor++ % A.vars.length]);
   }
 
   setRefs({ world, player, fx, audio }) {
@@ -1115,7 +1242,10 @@ export class EnemyManager {
     if (ASSETS) {
       for (const k in ASSETS.g) ASSETS.g[k].dispose();
       for (const k in ASSETS.m) ASSETS.m[k].dispose();
-      for (let i = 0; i < ASSETS.fatigueVars.length; i++) ASSETS.fatigueVars[i].dispose();
+      for (let i = 0; i < ASSETS.vars.length; i++) {
+        const v = ASSETS.vars[i];
+        for (const k in v) v[k].dispose();
+      }
       ASSETS = null;
     }
   }

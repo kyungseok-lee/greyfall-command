@@ -7,7 +7,7 @@ import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 const VignetteShader = {
   uniforms: {
     tDiffuse: { value: null },
-    intensity: { value: 0.55 },
+    intensity: { value: 0.42 },
     desat: { value: 0.25 },
     uTime: { value: 0 }
   },
@@ -81,7 +81,7 @@ export class Engine {
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.1;
+    this.renderer.toneMappingExposure = 1.35;
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     container.appendChild(this.renderer.domElement);
 
@@ -135,7 +135,7 @@ export class Engine {
   }
 
   setDamageIntensity(v) {
-    this.vignette.uniforms.intensity.value = 0.55 + v * 0.45;
+    this.vignette.uniforms.intensity.value = 0.42 + v * 0.45;
     this.vignette.uniforms.desat.value = 0.25 + v * 0.6;
   }
 

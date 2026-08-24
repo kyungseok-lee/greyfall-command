@@ -2,7 +2,7 @@ import puppeteer from 'puppeteer-core';
 
 const CHROME = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
 const URL = process.env.URL || 'http://localhost:4319/';
-const outDir = '/tmp/greyfall';
+const outDir = '/tmp/gf2';
 const log = (s) => console.log(new Date().toISOString().slice(11, 19), s);
 
 const browser = await puppeteer.launch({
@@ -30,12 +30,12 @@ try {
   await page.goto(URL, { waitUntil: 'domcontentloaded', timeout: 20000 });
   await new Promise((r) => setTimeout(r, 4000));
   log('menu shot');
-  await page.screenshot({ path: `${outDir}/11-menu.png` });
+  await page.screenshot({ path: `${outDir}/m1.png` });
 
   await page.click('#deploy-btn').catch((e) => log('click fail: ' + e.message));
   await new Promise((r) => setTimeout(r, 6000));
   log('game shot');
-  await page.screenshot({ path: `${outDir}/12-game.png` });
+  await page.screenshot({ path: `${outDir}/g1.png` });
 
   for (let i = 0; i < 10; i++) {
     await page.mouse.move(800 + Math.sin(i * 1.7) * 260, 450 + Math.cos(i * 2.3) * 120);
@@ -49,14 +49,14 @@ try {
   await page.keyboard.up('KeyW');
   await new Promise((r) => setTimeout(r, 1500));
   log('combat shot');
-  await page.screenshot({ path: `${outDir}/13-combat.png` });
+  await page.screenshot({ path: `${outDir}/c1.png` });
 
   await page.keyboard.down('Digit4'); await new Promise((r) => setTimeout(r, 160)); await page.keyboard.up('Digit4');
   await new Promise((r) => setTimeout(r, 700));
   await page.mouse.down({ button: 'right' });
   await new Promise((r) => setTimeout(r, 800));
   log('sniper scope shot');
-  await page.screenshot({ path: `${outDir}/14-scope.png` });
+  await page.screenshot({ path: `${outDir}/s1.png` });
   await page.mouse.up({ button: 'right' });
 
   log(errors.length ? 'ERRORS:\n' + errors.join('\n') : 'NO_CONSOLE_ERRORS');
