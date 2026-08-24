@@ -44,6 +44,12 @@ const _hitsShot = [];
 const _probeRes = [_hitsA, _hitsB, _hitsC];
 const _probeDists = [0, 0, 0];
 const _probeAngs = [0, 0.95, -0.95];
+const _csT = new THREE.Vector3();
+const _cpT = new THREE.Vector3();
+const NO_HITBOXES = [];
+
+const RIG_POOL_SIZE = 12;
+const FATIGUE_VARIANTS = 4;
 
 let ASSETS = null;
 
@@ -80,7 +86,7 @@ function buildAssets() {
   m.fatigue = new THREE.MeshStandardMaterial({ color: 0x8a7c54, roughness: 0.92, metalness: 0.02 });
   m.helmet = new THREE.MeshStandardMaterial({ color: 0x4a4f38, roughness: 0.8, metalness: 0.08 });
   m.balaclava = new THREE.MeshStandardMaterial({ color: 0x1d1f22, roughness: 0.95 });
-  m.goggles = new THREE.MeshStandardMaterial({ color: 0x10151a, emissive: 0xff9a3d, emissiveIntensity: 0.55, roughness: 0.35 });
+  m.goggles = new THREE.MeshStandardMaterial({ color: 0x10151a, emissive: 0xff9a3d, emissiveIntensity: 1.6, roughness: 0.35 });
   m.vest = new THREE.MeshStandardMaterial({ color: 0x30332a, roughness: 0.88 });
   m.pouch = new THREE.MeshStandardMaterial({ color: 0x272a21, roughness: 0.9 });
   m.pad = new THREE.MeshStandardMaterial({ color: 0x3d4130, roughness: 0.85 });
@@ -89,7 +95,13 @@ function buildAssets() {
   m.gun = new THREE.MeshStandardMaterial({ color: 0x191b1d, roughness: 0.5, metalness: 0.6 });
   m.gunAccent = new THREE.MeshStandardMaterial({ color: 0x2e2a22, roughness: 0.8 });
   m.hitbox = new THREE.MeshBasicMaterial();
-  return { g, m };
+  const fatigueVars = [];
+  for (let i = 0; i < FATIGUE_VARIANTS; i++) {
+    const f = new THREE.MeshStandardMaterial({ color: 0x8a7c54, roughness: 0.92, metalness: 0.02 });
+    f.color.offsetHSL(-0.02 + (i * 0.04) / (FATIGUE_VARIANTS - 1), -0.07 + (i * 0.14) / (FATIGUE_VARIANTS - 1), -0.05 + (i * 0.1) / (FATIGUE_VARIANTS - 1));
+    fatigueVars.push(f);
+  }
+  return { g, m, fatigueVars };
 }
 
 function getAssets() {
@@ -97,11 +109,153 @@ function getAssets() {
   return ASSETS;
 }
 
+function buildRig(fatigueMat) {
+  const A = getAssets();
+  const g = A.g;
+  const F = fatigueMat;
+
+  const grp = new THREE.Group();
+  const mesh = (geo, mat, parent) => {
+    const ms = new THREE.Mesh(geo, mat);
+    ms.castShadow = true;
+    parent.add(ms);
+    return ms;
+  };
+
+  const torso = new THREE.Group();
+  torso.position.y = 1.02;
+  grp.add(torso);
+
+  const chest = mesh(g.chest, F, torso); chest.position.y = 0.3;
+  const belt = mesh(g.belt, A.m.belt, torso); belt.position.y = 0.005;
+  const vest = mesh(g.vest, A.m.vest, torso); vest.position.y = 0.27;
+  const pl = mesh(g.pouch, A.m.pouch, torso); pl.position.set(-0.11, 0.17, 0.155);
+  const pr = mesh(g.pouch, A.m.pouch, torso); pr.position.set(0.11, 0.17, 0.155);
+  const bp = mesh(g.backPanel, A.m.pouch, torso); bp.position.set(0, 0.29, -0.175);
+  const padL = mesh(g.pad, A.m.pad, torso); padL.position.set(-0.28, 0.5, 0);
+  const padR = mesh(g.pad, A.m.pad, torso); padR.position.set(0.28, 0.5, 0);
+
+  const head = new THREE.Group();
+  head.position.y = 0.66;
+  torso.add(head);
+  const skull = mesh(g.head, A.m.balaclava, head); skull.scale.set(1, 1.15, 1.05); skull.position.y = 0.02;
+  const goggles = mesh(g.goggles, A.m.goggles, head); goggles.position.set(0, 0.045, 0.108);
+  const dome = mesh(g.helmet, A.m.helmet, head); dome.position.set(0, 0.062, -0.005);
+  const brim = mesh(g.brim, A.m.helmet, head); brim.position.set(0, 0.048, 0.005);
+  const visor = mesh(g.visor, A.m.helmet, head); visor.position.set(0, 0.052, 0.135);
+
+  const mkArm = (sx, baseRot, elbRot) => {
+    const piv = new THREE.Group();
+    piv.position.set(sx, 0.5, 0);
+    torso.add(piv);
+    const up = mesh(g.upperArm, F, piv); up.position.y = -0.13;
+    const elb = new THREE.Group();
+    elb.position.y = -0.27;
+    elb.rotation.x = elbRot;
+    piv.add(elb);
+    const fo = mesh(g.foreArm, F, elb); fo.position.z = 0.14;
+    const fi = mesh(g.fist, A.m.balaclava, elb); fi.position.z = 0.3;
+    piv.rotation.set(baseRot[0], baseRot[1], baseRot[2]);
+    piv.userData.base = baseRot;
+    return piv;
+  };
+  const armR = mkArm(-0.255, [-1.12, 0.2, 0.06], -0.5);
+  const armL = mkArm(0.255, [-1.28, -0.42, -0.12], -0.68);
+
+  const rifle = new THREE.Group();
+  rifle.position.set(-0.03, 0.37, 0.22);
+  rifle.rotation.y = -0.04;
+  torso.add(rifle);
+  const rec = mesh(g.receiver, A.m.gun, rifle);
+  const bar = mesh(g.barrel, A.m.gun, rifle); bar.rotation.x = Math.PI / 2; bar.position.set(0, 0.015, 0.38);
+  const hg = mesh(g.handguard, A.m.gunAccent, rifle); hg.position.set(0, 0.005, 0.26);
+  const mg = mesh(g.mag, A.m.gunAccent, rifle); mg.position.set(0, -0.115, 0.03); mg.rotation.x = 0.22;
+  const st = mesh(g.stock, A.m.gunAccent, rifle); st.position.set(0, -0.015, -0.31);
+  const gr = mesh(g.grip, A.m.gunAccent, rifle); gr.position.set(0, -0.095, -0.13); gr.rotation.x = 0.3;
+  const si = mesh(g.sight, A.m.gun, rifle); si.position.set(0, 0.08, 0.04);
+  const gunTip = new THREE.Object3D();
+  gunTip.position.set(0, 0.02, 0.55);
+  rifle.add(gunTip);
+
+  const legL = new THREE.Group();
+  legL.position.set(-0.115, 0.96, 0);
+  grp.add(legL);
+  const legR = new THREE.Group();
+  legR.position.set(0.115, 0.96, 0);
+  grp.add(legR);
+  for (const leg of [legL, legR]) {
+    const th = mesh(g.leg, F, leg); th.position.y = -0.41;
+    const bt = mesh(g.boot, A.m.boot, leg); bt.position.set(0, -0.865, 0.045);
+  }
+
+  const hitboxes = [];
+  const hbDefs = [
+    [g.hbHead, head, 0, 0.03, 0, true],
+    [g.hbTorso, torso, 0, 0.28, 0, false],
+    [g.hbLegs, grp, 0, 0.5, 0, false]
+  ];
+  for (const [geo, anchor, ox, oy, oz, isHead] of hbDefs) {
+    const anc = new THREE.Object3D();
+    anc.position.set(ox, oy, oz);
+    anchor.add(anc);
+    const hb = new THREE.Mesh(geo, getAssets().m.hitbox);
+    hb.visible = false;
+    if (isHead) hb.userData.isHead = true;
+    hitboxes.push({ hb, anc });
+  }
+
+  return { group: grp, torso, head, armR, armL, rifle, gunTip, legL, legR, hitboxes };
+}
+
 class Soldier {
-  constructor(mgr, spawnPos, wave) {
+  constructor(mgr) {
     this.mgr = mgr;
-    this.pos = new THREE.Vector3(spawnPos.x, 0, spawnPos.z);
+    this.pos = new THREE.Vector3();
     this.vel = new THREE.Vector3();
+    this.detourDir = new THREE.Vector3();
+    this.coverStand = new THREE.Vector3();
+    this.coverPerp = new THREE.Vector3();
+    this.relocTarget = new THREE.Vector3();
+    this.fallDir = new THREE.Vector3();
+    this.rig = null;
+    this.hitboxes = NO_HITBOXES;
+    this.group = null;
+    this.torso = null;
+    this.head = null;
+    this.armR = null;
+    this.armL = null;
+    this.rifle = null;
+    this.gunTip = null;
+    this.legL = null;
+    this.legR = null;
+  }
+
+  acquire(spawnPos, wave) {
+    const mgr = this.mgr;
+    const rig = mgr._takeRig();
+    this.rig = rig;
+    this.group = rig.group;
+    this.torso = rig.torso;
+    this.head = rig.head;
+    this.armR = rig.armR;
+    this.armL = rig.armL;
+    this.rifle = rig.rifle;
+    this.gunTip = rig.gunTip;
+    this.legL = rig.legL;
+    this.legR = rig.legR;
+    this.hitboxes = rig.hitboxes;
+    for (let i = 0; i < this.hitboxes.length; i++) {
+      const hb = this.hitboxes[i].hb;
+      hb.userData.enemyRef = this;
+      mgr.hitGroup.add(hb);
+    }
+    this.resetState(spawnPos, wave);
+    mgr.scene.add(this.group);
+  }
+
+  resetState(spawnPos, wave) {
+    this.pos.set(spawnPos.x, 0, spawnPos.z);
+    this.vel.set(0, 0, 0);
     this.wave = wave;
     this.speedMult = Math.min(1 + (wave - 1) * 0.02, 1.3);
     this.maxHealth = EC.health + Math.min((wave - 1) * 8, 60);
@@ -115,9 +269,10 @@ class Soldier {
     this.state = 'spawn';
     this.stateT = 0;
     this.hasLOS = false;
-    this.losTimer = (mgr.soldiers.length * 0.017) % 0.15;
+    this.losTimer = (this.mgr.soldiers.length * 0.017) % 0.15;
     this.distToPlayer = Infinity;
-    this.rootYaw = Math.atan2(mgr.playerPos().x - this.pos.x, mgr.playerPos().z - this.pos.z);
+    const pp = this.mgr.playerPos();
+    this.rootYaw = Math.atan2(pp.x - this.pos.x, pp.z - this.pos.z);
     this.torsoYaw = 0;
     this.walkPhase = Math.random() * 6.28;
     this.ready = 0;
@@ -133,126 +288,22 @@ class Soldier {
     this.avoidSide = 0;
     this.stuckT = 0;
     this.detourT = 0;
-    this.detourDir = new THREE.Vector3();
+    this.detourDir.set(0, 0, 0);
     this.cover = null;
-    this.coverStand = new THREE.Vector3();
-    this.coverPerp = new THREE.Vector3();
+    this.coverStand.set(0, 0, 0);
+    this.coverPerp.set(0, 0, 0);
     this.coverSide = Math.random() < 0.5 ? 1 : -1;
     this.coverSwapT = rand(4, 7);
     this.rhythm = 'hide';
     this.rhythmT = rand(0.4, 0.8);
     this.shotsLeft = 0;
     this.shotTimer = 0;
-    this.relocTarget = new THREE.Vector3();
-    this.fallDir = new THREE.Vector3(0, 0, 1);
+    this.relocTarget.set(0, 0, 0);
+    this.fallDir.set(0, 0, 1);
     this.lostLOST = 0;
 
-    this.buildBody();
-    mgr.scene.add(this.group);
-  }
-
-  buildBody() {
-    const A = getAssets();
-    const g = A.g;
-    this.matFatigue = A.m.fatigue.clone();
-    this.matFatigue.color.offsetHSL(rand(-0.02, 0.02), rand(-0.07, 0.07), rand(-0.05, 0.05));
-    const F = this.matFatigue;
-
-    const grp = new THREE.Group();
-    this.group = grp;
-    const mesh = (geo, mat, parent) => {
-      const ms = new THREE.Mesh(geo, mat);
-      ms.castShadow = true;
-      parent.add(ms);
-      return ms;
-    };
-
-    this.torso = new THREE.Group();
-    this.torso.position.y = 1.02;
-    grp.add(this.torso);
-
-    const chest = mesh(g.chest, F, this.torso); chest.position.y = 0.3;
-    const belt = mesh(g.belt, A.m.belt, this.torso); belt.position.y = 0.005;
-    const vest = mesh(g.vest, A.m.vest, this.torso); vest.position.y = 0.27;
-    const pl = mesh(g.pouch, A.m.pouch, this.torso); pl.position.set(-0.11, 0.17, 0.155);
-    const pr = mesh(g.pouch, A.m.pouch, this.torso); pr.position.set(0.11, 0.17, 0.155);
-    const bp = mesh(g.backPanel, A.m.pouch, this.torso); bp.position.set(0, 0.29, -0.175);
-    const padL = mesh(g.pad, A.m.pad, this.torso); padL.position.set(-0.28, 0.5, 0);
-    const padR = mesh(g.pad, A.m.pad, this.torso); padR.position.set(0.28, 0.5, 0);
-
-    this.head = new THREE.Group();
-    this.head.position.y = 0.66;
-    this.torso.add(this.head);
-    const skull = mesh(g.head, A.m.balaclava, this.head); skull.scale.set(1, 1.15, 1.05); skull.position.y = 0.02;
-    const goggles = mesh(g.goggles, A.m.goggles, this.head); goggles.position.set(0, 0.045, 0.108);
-    const dome = mesh(g.helmet, A.m.helmet, this.head); dome.position.set(0, 0.062, -0.005);
-    const brim = mesh(g.brim, A.m.helmet, this.head); brim.position.set(0, 0.048, 0.005);
-    const visor = mesh(g.visor, A.m.helmet, this.head); visor.position.set(0, 0.052, 0.135);
-
-    const mkArm = (sx, baseRot, elbRot) => {
-      const piv = new THREE.Group();
-      piv.position.set(sx, 0.5, 0);
-      this.torso.add(piv);
-      const up = mesh(g.upperArm, F, piv); up.position.y = -0.13;
-      const elb = new THREE.Group();
-      elb.position.y = -0.27;
-      elb.rotation.x = elbRot;
-      piv.add(elb);
-      const fo = mesh(g.foreArm, F, elb); fo.position.z = 0.14;
-      const fi = mesh(g.fist, A.m.balaclava, elb); fi.position.z = 0.3;
-      piv.rotation.set(baseRot[0], baseRot[1], baseRot[2]);
-      piv.userData.base = baseRot;
-      return piv;
-    };
-    this.armR = mkArm(-0.255, [-1.12, 0.2, 0.06], -0.5);
-    this.armL = mkArm(0.255, [-1.28, -0.42, -0.12], -0.68);
-
-    this.rifle = new THREE.Group();
-    this.rifle.position.set(-0.03, 0.37, 0.22);
-    this.rifle.rotation.y = -0.04;
-    this.torso.add(this.rifle);
-    const rec = mesh(g.receiver, A.m.gun, this.rifle);
-    const bar = mesh(g.barrel, A.m.gun, this.rifle); bar.rotation.x = Math.PI / 2; bar.position.set(0, 0.015, 0.38);
-    const hg = mesh(g.handguard, A.m.gunAccent, this.rifle); hg.position.set(0, 0.005, 0.26);
-    const mg = mesh(g.mag, A.m.gunAccent, this.rifle); mg.position.set(0, -0.115, 0.03); mg.rotation.x = 0.22;
-    const st = mesh(g.stock, A.m.gunAccent, this.rifle); st.position.set(0, -0.015, -0.31);
-    const gr = mesh(g.grip, A.m.gunAccent, this.rifle); gr.position.set(0, -0.095, -0.13); gr.rotation.x = 0.3;
-    const si = mesh(g.sight, A.m.gun, this.rifle); si.position.set(0, 0.08, 0.04);
-    this.gunTip = new THREE.Object3D();
-    this.gunTip.position.set(0, 0.02, 0.55);
-    this.rifle.add(this.gunTip);
-
-    this.legL = new THREE.Group();
-    this.legL.position.set(-0.115, 0.96, 0);
-    grp.add(this.legL);
-    this.legR = new THREE.Group();
-    this.legR.position.set(0.115, 0.96, 0);
-    grp.add(this.legR);
-    for (const leg of [this.legL, this.legR]) {
-      const th = mesh(g.leg, F, leg); th.position.y = -0.41;
-      const bt = mesh(g.boot, A.m.boot, leg); bt.position.set(0, -0.865, 0.045);
-    }
-
-    this.hitboxes = [];
-    const hbDefs = [
-      [g.hbHead, this.head, _v1.set(0, 0.03, 0), true],
-      [g.hbTorso, this.torso, _v1.set(0, 0.28, 0), false],
-      [g.hbLegs, grp, _v1.set(0, 0.5, 0), false]
-    ];
-    for (const [geo, anchor, off, isHead] of hbDefs) {
-      const anc = new THREE.Object3D();
-      anc.position.copy(off);
-      anchor.add(anc);
-      const hb = new THREE.Mesh(geo, getAssets().m.hitbox);
-      hb.visible = false;
-      hb.userData.enemyRef = this;
-      if (isHead) hb.userData.isHead = true;
-      this.mgr.hitGroup.add(hb);
-      this.hitboxes.push({ hb, anc });
-    }
-
-    grp.position.copy(this.pos);
-    grp.rotation.y = this.rootYaw;
+    this.group.position.copy(this.pos);
+    this.group.rotation.set(0, this.rootYaw, 0);
   }
 
   playerPos() {
@@ -404,8 +455,8 @@ class Soldier {
       if (score < bestScore) {
         bestScore = score;
         best = cp;
-        bestStand = _v7.set(cp.pos.x - cp.dir.x * 0.25, 0, cp.pos.z - cp.dir.z * 0.25).clone();
-        bestPerp = _v8.set(cp.dir.z, 0, -cp.dir.x).clone();
+        bestStand = _csT.set(cp.pos.x - cp.dir.x * 0.25, 0, cp.pos.z - cp.dir.z * 0.25);
+        bestPerp = _cpT.set(cp.dir.z, 0, -cp.dir.x);
       }
     }
     if (best) {
@@ -820,13 +871,25 @@ class Soldier {
     this.updateAnim(dt, speed);
   }
 
-  destroy(mgr) {
+  release(mgr) {
     mgr.scene.remove(this.group);
-    this.matFatigue.dispose();
-    for (const { hb } of this.hitboxes) {
+    for (let i = 0; i < this.hitboxes.length; i++) {
+      const hb = this.hitboxes[i].hb;
       hb.userData.enemyRef = null;
       mgr.hitGroup.remove(hb);
     }
+    mgr._rigPool.push(this.rig);
+    this.rig = null;
+    this.group = null;
+    this.torso = null;
+    this.head = null;
+    this.armR = null;
+    this.armL = null;
+    this.rifle = null;
+    this.gunTip = null;
+    this.legL = null;
+    this.legR = null;
+    this.hitboxes = NO_HITBOXES;
   }
 }
 
@@ -853,6 +916,19 @@ export class EnemyManager {
     this._sorted = null;
     this._mmArr = [];
     this._mmPool = [];
+    this._rigPool = [];
+    this._soldierPool = [];
+    const A = getAssets();
+    for (let i = 0; i < RIG_POOL_SIZE; i++) {
+      this._rigPool.push(buildRig(A.fatigueVars[i % A.fatigueVars.length]));
+    }
+    this._rigCursor = RIG_POOL_SIZE;
+  }
+
+  _takeRig() {
+    if (this._rigPool.length) return this._rigPool.pop();
+    const A = getAssets();
+    return buildRig(A.fatigueVars[this._rigCursor++ % A.fatigueVars.length]);
   }
 
   setRefs({ world, player, fx, audio }) {
@@ -917,7 +993,9 @@ export class EnemyManager {
   _spawnOne() {
     _v2.set(0, 0, 0);
     this._pickSpawn(_v2);
-    const s = new Soldier(this, _v2, this.wave);
+    let s = this._soldierPool.pop();
+    if (!s) s = new Soldier(this);
+    s.acquire(_v2, this.wave);
     this.soldiers.push(s);
   }
 
@@ -944,7 +1022,8 @@ export class EnemyManager {
 
   clear() {
     for (let i = 0; i < this.soldiers.length; i++) {
-      this.soldiers[i].destroy(this);
+      this.soldiers[i].release(this);
+      this._soldierPool.push(this.soldiers[i]);
     }
     this.soldiers.length = 0;
     this.queue = 0;
@@ -999,7 +1078,8 @@ export class EnemyManager {
 
     for (let i = sols.length - 1; i >= 0; i--) {
       if (sols[i].removeMe) {
-        sols[i].destroy(this);
+        sols[i].release(this);
+        this._soldierPool.push(sols[i]);
         sols[i] = sols[sols.length - 1];
         sols.pop();
       }
@@ -1030,9 +1110,12 @@ export class EnemyManager {
     this.clear();
     this.scene.remove(this.hitGroup);
     this.hitGroup.clear();
+    this._rigPool.length = 0;
+    this._soldierPool.length = 0;
     if (ASSETS) {
       for (const k in ASSETS.g) ASSETS.g[k].dispose();
       for (const k in ASSETS.m) ASSETS.m[k].dispose();
+      for (let i = 0; i < ASSETS.fatigueVars.length; i++) ASSETS.fatigueVars[i].dispose();
       ASSETS = null;
     }
   }

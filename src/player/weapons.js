@@ -4,6 +4,8 @@ import { buildWeaponModels, disposeWeaponModels } from './viewmodel.js';
 
 const W = CONFIG.WEAPONS;
 const ORDER = ['ar', 'smg', 'shotgun', 'sniper'];
+const DIGIT_KEYS = ['Digit1', 'Digit2', 'Digit3', 'Digit4'];
+const SHOOT_FN = { ar: 'Rifle', smg: 'SMG', shotgun: 'Shotgun', sniper: 'Sniper' };
 const BASE_FOV = 75;
 const SPRINT_FOV = 6;
 const ADS_TIME = 0.16;
@@ -182,8 +184,7 @@ export class WeaponSystem {
 
     if (!dead) {
       for (let i = 0; i < ORDER.length; i++) {
-        const code = 'Digit' + (i + 1);
-        if (k.has(code) && !prev.has(code)) this.equip(ORDER[i]);
+        if (k.has(DIGIT_KEYS[i]) && !prev.has(DIGIT_KEYS[i])) this.equip(ORDER[i]);
       }
       if (k.has('KeyR') && !prev.has('KeyR')) this.tryReload();
       let wheel = this.input.consumeWheel();
@@ -350,7 +351,7 @@ export class WeaponSystem {
     const muzzle = this.models[this.currentId].muzzle.getWorldPosition(T_MUZ);
 
     c.fx.muzzleFlash(muzzle, T_FWD);
-    c.audio?.['shoot' + ({ ar: 'Rifle', smg: 'SMG', shotgun: 'Shotgun', sniper: 'Sniper' })[this.currentId]]?.();
+    c.audio?.[SHOOT_FN[this.currentId]]?.();
 
     const spreadRad = this.currentSpread() * Math.PI / 180;
     for (let i = 0; i < w.pellets; i++) {

@@ -196,23 +196,23 @@ class ParticlePool {
     this.points.renderOrder = 5;
   }
 
-  spawn(x, y, z, vx, vy, vz, opts) {
+  spawn(x, y, z, vx, vy, vz, life, lifeJit, size0, sizeJit, size1, grav, drag, alpha, r, g, b) {
     const i = this.cursor;
     this.cursor = (this.cursor + 1) % this.cap;
     const i3 = i * 3;
     this.pos[i3] = x; this.pos[i3 + 1] = y; this.pos[i3 + 2] = z;
     this.vel[i3] = vx; this.vel[i3 + 1] = vy; this.vel[i3 + 2] = vz;
-    const lj = opts.lifeJit ? rand(1 - opts.lifeJit, 1 + opts.lifeJit) : 1;
-    const sj = opts.sizeJit ? rand(1 - opts.sizeJit, 1 + opts.sizeJit) : 1;
-    this.life[i] = this.maxLife[i] = Math.max(0.02, opts.life * lj);
-    this.size0[i] = opts.size0 * sj;
-    this.size1[i] = (opts.size1 !== undefined ? opts.size1 : opts.size0) * sj;
-    this.grav[i] = opts.grav || 0;
-    this.drag[i] = opts.drag || 0;
-    this.baseA[i] = opts.alpha !== undefined ? opts.alpha : 1;
-    this.aColor.array[i3] = opts.r;
-    this.aColor.array[i3 + 1] = opts.g;
-    this.aColor.array[i3 + 2] = opts.b;
+    const lj = lifeJit ? rand(1 - lifeJit, 1 + lifeJit) : 1;
+    const sj = sizeJit ? rand(1 - sizeJit, 1 + sizeJit) : 1;
+    this.life[i] = this.maxLife[i] = Math.max(0.02, life * lj);
+    this.size0[i] = size0 * sj;
+    this.size1[i] = (size1 === null ? size0 : size1) * sj;
+    this.grav[i] = grav;
+    this.drag[i] = drag;
+    this.baseA[i] = alpha;
+    this.aColor.array[i3] = r;
+    this.aColor.array[i3 + 1] = g;
+    this.aColor.array[i3 + 2] = b;
   }
 
   update(dt) {
@@ -429,12 +429,14 @@ export class FXManager {
     this.debZero = zeroM;
 
     this.pending = [];
+    for (let i = 0; i < 32; i++) this.pending.push({ t: 0, x: 0, y: 0, z: 0, active: false });
+    this.pendingCursor = 0;
 
     this.onShake = null;
   }
 
   _takeSprite(pool) {
-    for (const e of pool) if (!e.active) return e;
+    for (let i = 0; i < pool.length; i++) if (!pool[i].active) return pool[i];
     return null;
   }
 
@@ -468,16 +470,12 @@ export class FXManager {
       _v1.copy(dir).multiplyScalar(rand(6, 14))
         .addScaledVector(UP, rand(-1.4, 2.2))
         .add(_v2.set(rand(-1, 1), rand(-1, 1), rand(-1, 1)).multiplyScalar(2));
-      this.glow.spawn(pos.x, pos.y, pos.z, _v1.x, _v1.y, _v1.z, {
-        life: rand(0.06, 0.14), size0: rand(0.03, 0.07), grav: 4, drag: 2,
-        r: 1, g: 0.82, b: 0.5, alpha: 0.9
-      });
+      this.glow.spawn(pos.x, pos.y, pos.z, _v1.x, _v1.y, _v1.z,
+        rand(0.06, 0.14), 0, rand(0.03, 0.07), 0, null, 4, 2, 0.9, 1, 0.82, 0.5);
     }
     this.puff.spawn(pos.x + dir.x * 0.2, pos.y + 0.05, pos.z + dir.z * 0.2,
-      rand(-0.2, 0.2), rand(0.5, 0.9), rand(-0.2, 0.2), {
-      life: rand(0.4, 0.6), size0: 0.12, size1: 0.5, grav: -0.5, drag: 1.5,
-      r: 0.62, g: 0.58, b: 0.5, alpha: 0.16
-    });
+      rand(-0.2, 0.2), rand(0.5, 0.9), rand(-0.2, 0.2),
+      rand(0.4, 0.6), 0, 0.12, 0, 0.5, -0.5, 1.5, 0.16, 0.62, 0.58, 0.5);
   }
 
   tracer(from, to) {
@@ -492,80 +490,69 @@ export class FXManager {
     e.mesh.visible = true;
   }
 
+  _impactSpray(p, nx, ny, nz, n, spd0, spd1, life, lifeJit, size0, sizeJit, grav, drag, r, g, b, alpha) {
+    for (let i = 0; i < n; i++) {
+      const rv = rand(spd0, spd1);
+      _v1.set(nx + rand(-0.8, 0.8), ny + rand(-0.5, 1), nz + rand(-0.8, 0.8)).normalize().multiplyScalar(rv);
+      this.glow.spawn(p.x, p.y, p.z, _v1.x, _v1.y, _v1.z, life, lifeJit, size0, sizeJit, null, grav, drag, alpha, r, g, b);
+    }
+  }
+
+  _impactPuffs(p, nx, ny, nz, n, life, lifeJit, size0, sizeJit, size1, grav, drag, r, g, b, alpha) {
+    for (let i = 0; i < n; i++) {
+      _v1.set(nx * rand(0.4, 1.4) + rand(-0.4, 0.4), ny * rand(0.4, 1.2) + rand(0.2, 0.9), nz * rand(0.4, 1.4) + rand(-0.4, 0.4));
+      this.puff.spawn(
+        p.x + nx * 0.04 + rand(-0.05, 0.05),
+        p.y + ny * 0.04 + rand(-0.05, 0.05),
+        p.z + nz * 0.04 + rand(-0.05, 0.05),
+        _v1.x, _v1.y, _v1.z, life, lifeJit, size0, sizeJit, size1, grav, drag, alpha, r, g, b
+      );
+    }
+  }
+
+  _impactChips(p, nx, ny, nz, n, col, s0, s1, spd) {
+    for (let i = 0; i < n; i++) {
+      _v1.set(nx * rand(0.8, 1.6) + rand(-1, 1), ny * rand(0.8, 1.8) + rand(0.4, 1.6), nz * rand(0.8, 1.6) + rand(-1, 1)).normalize().multiplyScalar(rand(spd * 0.5, spd));
+      this._spawnDebris(p.x, p.y, p.z, _v1.x, _v1.y, _v1.z, rand(s0, s1), col, rand(0.7, 1.4), 0);
+    }
+  }
+
   impact(point, normal, materialType) {
     const nx = normal.x, ny = normal.y, nz = normal.z;
-    const spray = (n, spd0, spd1, opts) => {
-      for (let i = 0; i < n; i++) {
-        const rv = rand(spd0, spd1);
-        _v1.set(nx + rand(-0.8, 0.8), ny + rand(-0.5, 1), nz + rand(-0.8, 0.8)).normalize().multiplyScalar(rv);
-        this.glow.spawn(point.x, point.y, point.z, _v1.x, _v1.y, _v1.z, opts);
-      }
-    };
-    const puffAt = (n, opts) => {
-      for (let i = 0; i < n; i++) {
-        _v1.set(nx * rand(0.4, 1.4) + rand(-0.4, 0.4), ny * rand(0.4, 1.2) + rand(0.2, 0.9), nz * rand(0.4, 1.4) + rand(-0.4, 0.4));
-        this.puff.spawn(
-          point.x + nx * 0.04 + rand(-0.05, 0.05),
-          point.y + ny * 0.04 + rand(-0.05, 0.05),
-          point.z + nz * 0.04 + rand(-0.05, 0.05),
-          _v1.x, _v1.y, _v1.z, opts
-        );
-      }
-    };
-    const chip = (n, col, s0, s1, spd) => {
-      for (let i = 0; i < n; i++) {
-        _v1.set(nx * rand(0.8, 1.6) + rand(-1, 1), ny * rand(0.8, 1.8) + rand(0.4, 1.6), nz * rand(0.8, 1.6) + rand(-1, 1)).normalize().multiplyScalar(rand(spd * 0.5, spd));
-        this._spawnDebris(point.x, point.y, point.z, _v1.x, _v1.y, _v1.z, rand(s0, s1), col, rand(0.7, 1.4), 0);
-      }
-    };
 
     switch (materialType) {
       case 'metal':
       case 'barrel': {
         const hot = materialType === 'barrel';
-        spray(hot ? 14 : 16, 3, 9, {
-          life: 0.4, lifeJit: 0.35, size0: 0.035, sizeJit: 0.4, grav: 12, drag: 0.6,
-          r: 1, g: hot ? 0.72 : 0.84, b: hot ? 0.25 : 0.36, alpha: 1
-        });
-        spray(5, 2, 5, {
-          life: 0.22, lifeJit: 0.35, size0: 0.045, sizeJit: 0.4, grav: 8, drag: 1,
-          r: 1, g: 0.95, b: 0.78, alpha: 0.95
-        });
+        this._impactSpray(point, nx, ny, nz, hot ? 14 : 16, 3, 9,
+          0.4, 0.35, 0.035, 0.4, 12, 0.6, 1, hot ? 0.72 : 0.84, hot ? 0.25 : 0.36, 1);
+        this._impactSpray(point, nx, ny, nz, 5, 2, 5,
+          0.22, 0.35, 0.045, 0.4, 8, 1, 1, 0.95, 0.78, 0.95);
         this._surfaceFlash(point, normal, rand(0.22, 0.34));
         this._placeDecal(point, normal, rand(0.1, 0.14), 0.55);
         break;
       }
       case 'sand': {
-        puffAt(7, {
-          life: 0.75, lifeJit: 0.3, size0: 0.18, size1: 0.75, sizeJit: 0.35,
-          grav: -0.4, drag: 1.8, r: 0.79, g: 0.69, b: 0.51, alpha: 0.4
-        });
-        spray(5, 2, 5, {
-          life: 0.3, lifeJit: 0.3, size0: 0.025, sizeJit: 0.4, grav: 10, drag: 1,
-          r: 0.83, g: 0.73, b: 0.53, alpha: 0.7
-        });
-        chip(3, 0xb59a6b, 0.02, 0.045, 3);
+        this._impactPuffs(point, nx, ny, nz, 7,
+          0.75, 0.3, 0.18, 0.35, 0.75, -0.4, 1.8, 0.79, 0.69, 0.51, 0.4);
+        this._impactSpray(point, nx, ny, nz, 5, 2, 5,
+          0.3, 0.3, 0.025, 0.4, 10, 1, 0.83, 0.73, 0.53, 0.7);
+        this._impactChips(point, nx, ny, nz, 3, 0xb59a6b, 0.02, 0.045, 3);
         break;
       }
       case 'wood': {
-        puffAt(3, {
-          life: 0.48, lifeJit: 0.25, size0: 0.11, size1: 0.4, sizeJit: 0.3,
-          grav: -0.3, drag: 1.6, r: 0.55, g: 0.42, b: 0.27, alpha: 0.35
-        });
-        chip(5, 0x6d4a2a, 0.025, 0.06, 4.5);
+        this._impactPuffs(point, nx, ny, nz, 3,
+          0.48, 0.25, 0.11, 0.3, 0.4, -0.3, 1.6, 0.55, 0.42, 0.27, 0.35);
+        this._impactChips(point, nx, ny, nz, 5, 0x6d4a2a, 0.025, 0.06, 4.5);
         this._placeDecal(point, normal, rand(0.09, 0.12), 0.8);
         break;
       }
       default: {
-        puffAt(5, {
-          life: 0.6, lifeJit: 0.3, size0: 0.14, size1: 0.6, sizeJit: 0.35,
-          grav: -0.35, drag: 1.7, r: 0.63, g: 0.6, b: 0.56, alpha: 0.38
-        });
-        spray(7, 2, 6.5, {
-          life: 0.28, lifeJit: 0.4, size0: 0.028, sizeJit: 0.4, grav: 9, drag: 0.8,
-          r: 1, g: 0.9, b: 0.72, alpha: 0.85
-        });
-        chip(3, 0x8d877d, 0.02, 0.05, 3.5);
+        this._impactPuffs(point, nx, ny, nz, 5,
+          0.6, 0.3, 0.14, 0.35, 0.6, -0.35, 1.7, 0.63, 0.6, 0.56, 0.38);
+        this._impactSpray(point, nx, ny, nz, 7, 2, 6.5,
+          0.28, 0.4, 0.028, 0.4, 9, 0.8, 1, 0.9, 0.72, 0.85);
+        this._impactChips(point, nx, ny, nz, 3, 0x8d877d, 0.02, 0.05, 3.5);
         this._placeDecal(point, normal, rand(0.11, 0.16), 0.9);
         break;
       }
@@ -576,11 +563,9 @@ export class FXManager {
     for (let i = 0; i < 13; i++) {
       _v1.set(-dir.x * rand(0.4, 2.2) + rand(-1.6, 1.6), rand(0.2, 2.4), -dir.z * rand(0.4, 2.2) + rand(-1.6, 1.6));
       const dark = Math.random() < 0.5;
-      this.puff.spawn(point.x, point.y, point.z, _v1.x, _v1.y, _v1.z, {
-        life: rand(0.25, 0.5), size0: rand(0.03, 0.07), size1: rand(0.05, 0.1),
-        grav: 13, drag: 0.4,
-        r: dark ? 0.38 : 0.55, g: 0.045, b: 0.06, alpha: 0.95
-      });
+      this.puff.spawn(point.x, point.y, point.z, _v1.x, _v1.y, _v1.z,
+        rand(0.25, 0.5), 0, rand(0.03, 0.07), 0, rand(0.05, 0.1), 13, 0.4,
+        0.95, dark ? 0.38 : 0.55, 0.045, 0.06);
     }
     const p = this._takeSprite(this.puffsprites);
     if (p) {
@@ -631,7 +616,11 @@ export class FXManager {
     bl.light.intensity = bl.peak;
     bl.light.visible = true;
 
-    const ring = this.rings.find((r) => !r.active) || this.rings[0];
+    let ring = null;
+    for (let i = 0; i < this.rings.length; i++) {
+      if (!this.rings[i].active) { ring = this.rings[i]; break; }
+    }
+    if (!ring) ring = this.rings[0];
     ring.active = true; ring.t = 0; ring.dur = 0.55;
     ring.s0 = 0.6; ring.s1 = 9; ring.a0 = 0.8;
     ring.mesh.position.set(pos.x, 0.07, pos.z);
@@ -639,32 +628,22 @@ export class FXManager {
 
     const nSmoke = 5 + Math.floor(rand(0, 4));
     for (let i = 0; i < nSmoke; i++) {
-      this.pending.push({
-        t: i * rand(0.05, 0.09),
-        fn: () => {
-          const p = this._takeSprite(this.puffsprites);
-          if (!p) return;
-          p.active = true; p.t = 0; p.dur = rand(1.4, 2.1);
-          p.s0 = rand(0.9, 1.4); p.s1 = rand(2.8, 4.2); p.a0 = rand(0.4, 0.55); p.fp = 1.3;
-          p.spin = rand(-0.5, 0.5);
-          p.vx = rand(-0.6, 0.6); p.vy = rand(1.4, 2.6); p.vz = rand(-0.6, 0.6);
-          p.spr.position.set(pos.x + rand(-0.5, 0.5), pos.y + rand(0.1, 0.7), pos.z + rand(-0.5, 0.5));
-          p.spr.material.color.setHex(0x39332b);
-          p.spr.material.rotation = rand(0, TAU);
-          p.spr.material.opacity = p.a0;
-          p.spr.visible = true;
-        }
-      });
+      const slot = this.pending[this.pendingCursor];
+      this.pendingCursor = (this.pendingCursor + 1) % this.pending.length;
+      slot.active = true;
+      slot.t = i * rand(0.05, 0.09);
+      slot.x = pos.x;
+      slot.y = pos.y;
+      slot.z = pos.z;
     }
 
     for (let i = 0; i < 26; i++) {
       _v1.set(rand(-1, 1), rand(0.15, 1), rand(-1, 1)).normalize().multiplyScalar(rand(4, 12));
       _v1.y += 3;
       const ember = Math.random() < 0.5;
-      this.glow.spawn(pos.x, pos.y + 0.3, pos.z, _v1.x, _v1.y, _v1.z, {
-        life: rand(0.4, 1.0), size0: rand(0.05, 0.12), grav: 9, drag: 0.7,
-        r: 1, g: ember ? 0.62 : 0.8, b: ember ? 0.18 : 0.42, alpha: 1
-      });
+      this.glow.spawn(pos.x, pos.y + 0.3, pos.z, _v1.x, _v1.y, _v1.z,
+        rand(0.4, 1.0), 0, rand(0.05, 0.12), 0, null, 9, 0.7,
+        1, 1, ember ? 0.62 : 0.8, ember ? 0.18 : 0.42);
     }
 
     for (let i = 0; i < 12; i++) {
@@ -690,7 +669,11 @@ export class FXManager {
   }
 
   _surfaceFlash(point, normal, size) {
-    const e = this.surfaceFlashes.find((s) => !s.active) || this.surfaceFlashes[0];
+    let e = null;
+    for (let i = 0; i < this.surfaceFlashes.length; i++) {
+      if (!this.surfaceFlashes[i].active) { e = this.surfaceFlashes[i]; break; }
+    }
+    if (!e) e = this.surfaceFlashes[0];
     e.active = true; e.t = 0; e.dur = 0.14;
     e.s0 = size; e.s1 = size * 0.3;
     e.mesh.position.copy(point).addScaledVector(normal, 0.015);
@@ -742,16 +725,27 @@ export class FXManager {
     if (dt <= 0) return;
     const cam = this.camera;
 
-    for (let i = this.pending.length - 1; i >= 0; i--) {
+    for (let i = 0; i < this.pending.length; i++) {
       const p = this.pending[i];
+      if (!p.active) continue;
       p.t -= dt;
-      if (p.t <= 0) {
-        this.pending.splice(i, 1);
-        p.fn();
-      }
+      if (p.t > 0) continue;
+      p.active = false;
+      const s = this._takeSprite(this.puffsprites);
+      if (!s) continue;
+      s.active = true; s.t = 0; s.dur = rand(1.4, 2.1);
+      s.s0 = rand(0.9, 1.4); s.s1 = rand(2.8, 4.2); s.a0 = rand(0.4, 0.55); s.fp = 1.3;
+      s.spin = rand(-0.5, 0.5);
+      s.vx = rand(-0.6, 0.6); s.vy = rand(1.4, 2.6); s.vz = rand(-0.6, 0.6);
+      s.spr.position.set(p.x + rand(-0.5, 0.5), p.y + rand(0.1, 0.7), p.z + rand(-0.5, 0.5));
+      s.spr.material.color.setHex(0x39332b);
+      s.spr.material.rotation = rand(0, TAU);
+      s.spr.material.opacity = s.a0;
+      s.spr.visible = true;
     }
 
-    for (const e of this.tracers) {
+    for (let i = 0; i < this.tracers.length; i++) {
+      const e = this.tracers[i];
       if (!e.active) continue;
       e.head += 280 * dt;
       if (e.head >= e.dist) {
@@ -786,7 +780,8 @@ export class FXManager {
     this.glow.mat.uniforms.uScale.value = uScale;
     this.puff.mat.uniforms.uScale.value = uScale;
 
-    for (const e of this.flashes) {
+    for (let i = 0; i < this.flashes.length; i++) {
+      const e = this.flashes[i];
       if (!e.active) continue;
       e.t += dt;
       const u = e.t / e.dur;
@@ -800,7 +795,8 @@ export class FXManager {
       e.spr.scale.set(s, s, 1);
     }
 
-    for (const e of this.glowsprites) {
+    for (let i = 0; i < this.glowsprites.length; i++) {
+      const e = this.glowsprites[i];
       if (!e.active) continue;
       e.t += dt;
       const u = e.t / e.dur;
@@ -818,7 +814,8 @@ export class FXManager {
       e.spr.scale.set(s, s, 1);
     }
 
-    for (const e of this.puffsprites) {
+    for (let i = 0; i < this.puffsprites.length; i++) {
+      const e = this.puffsprites[i];
       if (!e.active) continue;
       e.t += dt;
       const u = e.t / e.dur;
@@ -838,7 +835,8 @@ export class FXManager {
       e.spr.material.rotation += e.spin * dt;
     }
 
-    for (const e of this.rings) {
+    for (let i = 0; i < this.rings.length; i++) {
+      const e = this.rings[i];
       if (!e.active) continue;
       e.t += dt;
       const u = e.t / e.dur;
@@ -852,7 +850,8 @@ export class FXManager {
       e.mesh.scale.setScalar(s);
     }
 
-    for (const e of this.surfaceFlashes) {
+    for (let i = 0; i < this.surfaceFlashes.length; i++) {
+      const e = this.surfaceFlashes[i];
       if (!e.active) continue;
       e.t += dt;
       const u = e.t / e.dur;
@@ -866,7 +865,8 @@ export class FXManager {
       e.mesh.scale.setScalar(s);
     }
 
-    for (const e of this.decals) {
+    for (let i = 0; i < this.decals.length; i++) {
+      const e = this.decals[i];
       if (!e.active) continue;
       e.life -= dt;
       if (e.life <= 0) {
@@ -880,7 +880,8 @@ export class FXManager {
       }
     }
 
-    for (const e of this.muzzleLights) {
+    for (let i = 0; i < this.muzzleLights.length; i++) {
+      const e = this.muzzleLights[i];
       if (!e.light.visible) continue;
       e.t += dt;
       const u = e.t / e.dur;
@@ -891,7 +892,8 @@ export class FXManager {
         e.light.intensity = e.peak * Math.pow(1 - u, 2);
       }
     }
-    for (const e of this.blastLights) {
+    for (let i = 0; i < this.blastLights.length; i++) {
+      const e = this.blastLights[i];
       if (!e.light.visible) continue;
       e.t += dt;
       const u = e.t / e.dur;
@@ -905,7 +907,8 @@ export class FXManager {
 
     let debDirty = false;
     const G = CONFIG.PLAYER.gravity;
-    for (const e of this.debEntries) {
+    for (let i = 0; i < this.debEntries.length; i++) {
+      const e = this.debEntries[i];
       if (!e.active) continue;
       debDirty = true;
       e.life -= dt;
@@ -953,7 +956,7 @@ export class FXManager {
   }
 
   dispose() {
-    this.pending.length = 0;
+    for (let i = 0; i < this.pending.length; i++) this.pending[i].active = false;
     this.scene.remove(this.root);
     this.glow.dispose();
     this.puff.dispose();

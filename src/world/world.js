@@ -3,8 +3,11 @@ import { Sky } from 'three/addons/objects/Sky.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import {
   sandTexture,
+  sandNormalTexture,
   concreteTexture,
+  concreteNormalTexture,
   corrugatedTexture,
+  corrugatedNormalTexture,
   woodTexture,
   barrelTexture,
   flagTexture,
@@ -164,9 +167,9 @@ export class World {
     this.sunDir = new THREE.Vector3().setFromSphericalCoords(1, phi, theta);
     u.sunPosition.value.copy(this.sunDir);
 
-    this.scene.fog = new THREE.Fog(0xe8c39a, 110, 560);
+    this.scene.fog = new THREE.Fog(0xdcc4a0, 130, 560);
 
-    this.group.add(new THREE.HemisphereLight(0xbdd0f5, 0xd8b078, 1.05));
+    this.group.add(new THREE.HemisphereLight(0xbdd0f5, 0xd8b078, 1.15));
 
     const sun = new THREE.DirectionalLight(0xffd9ae, 4.8);
     sun.position.copy(this.sunDir).multiplyScalar(170);
@@ -185,7 +188,7 @@ export class World {
     this.group.add(sun);
     this.group.add(sun.target);
 
-    const fill = new THREE.DirectionalLight(0x8fb0e8, 0.55);
+    const fill = new THREE.DirectionalLight(0x8fb0e8, 0.85);
     fill.position.set(-sun.position.x, sun.position.y * 0.6, -sun.position.z);
     this.group.add(fill);
   }
@@ -193,7 +196,15 @@ export class World {
   _buildGround() {
     const sand = this._trackTex(sandTexture());
     sand.repeat.set(46, 46);
-    this.groundMat = this._mat({ map: sand, roughness: 0.96, metalness: 0 });
+    const sandN = this._trackTex(sandNormalTexture());
+    sandN.repeat.set(46, 46);
+    this.groundMat = this._mat({
+      map: sand,
+      normalMap: sandN,
+      normalScale: new THREE.Vector2(0.65, 0.65),
+      roughness: 0.96,
+      metalness: 0
+    });
     const g = new THREE.PlaneGeometry(1200, 1200);
     g.rotateX(-Math.PI / 2);
     const ground = new THREE.Mesh(g, this.groundMat);
@@ -220,7 +231,12 @@ export class World {
   }
 
   _buildPerimeter() {
-    const conc = this._mat({ map: this._trackTex(concreteTexture()), roughness: 0.94 });
+    const conc = this._mat({
+      map: this._trackTex(concreteTexture()),
+      normalMap: this._trackTex(concreteNormalTexture()),
+      normalScale: new THREE.Vector2(0.5, 0.5),
+      roughness: 0.94
+    });
     const L = this._bucket('wall', conc, 'concrete');
 
     const seg = (cx, cz, w, d, h, y = 0) => {
@@ -252,7 +268,14 @@ export class World {
       this.minimapRects.push({ x: t[0], z: t[1], w: 5.2, d: 5.2 });
     }
 
-    const dark = this._mat({ map: this._trackTex(corrugatedTexture()), color: 0x6a6f74, roughness: 0.6, metalness: 0.55 });
+    const dark = this._mat({
+      map: this._trackTex(corrugatedTexture()),
+      normalMap: this._trackTex(corrugatedNormalTexture()),
+      normalScale: new THREE.Vector2(0.9, 0.9),
+      color: 0x6a6f74,
+      roughness: 0.6,
+      metalness: 0.55
+    });
     const M = this._bucket('gate', dark, 'metal');
     M.push(this._place(this._sbox(0.8, 5.4, 1.0), -5.6, 2.7, -65));
     M.push(this._place(this._sbox(0.8, 5.4, 1.0), 5.6, 2.7, -65));
@@ -307,7 +330,12 @@ _buildBuilding(bx, bz, w, h, d, ry, doorSide) {
 }
 
 _buildBuildings() {
-  const conc = this._mat({ map: this._trackTex(concreteTexture()), roughness: 0.94 });
+  const conc = this._mat({
+    map: this._trackTex(concreteTexture()),
+    normalMap: this._trackTex(concreteNormalTexture()),
+    normalScale: new THREE.Vector2(0.5, 0.5),
+    roughness: 0.94
+  });
   const glass = this._mat({ color: 0x0c0f12, roughness: 0.25, metalness: 0.4 });
   const tarp = this._mat({ map: this._trackTex(tarpTexture()), roughness: 0.95 });
   this._bucket('bldg', conc, 'concrete');
@@ -341,7 +369,14 @@ _buildBuildings() {
 
 _buildContainers() {
   const corr = this._trackTex(corrugatedTexture());
-  const mat = this._mat({ map: corr, roughness: 0.68, metalness: 0.42 });
+  const corrN = this._trackTex(corrugatedNormalTexture());
+  const mat = this._mat({
+    map: corr,
+    normalMap: corrN,
+    normalScale: new THREE.Vector2(0.9, 0.9),
+    roughness: 0.68,
+    metalness: 0.42
+  });
   const geo = new THREE.BoxGeometry(6.06, 2.6, 2.44);
   const spots = [
     [36, -32, 0, 0x8a3324],
@@ -720,7 +755,7 @@ _buildMountains() {
     geos.push(g);
   }
   const merged = mergeGeometries(geos, false);
-  const mat = this._mat({ color: 0xb08a5e, roughness: 1 });
+  const mat = this._mat({ color: 0xb39377, roughness: 1 });
   const mesh = new THREE.Mesh(merged, mat);
   mesh.userData.materialType = 'sand';
   this.group.add(mesh);
@@ -800,7 +835,6 @@ update(dt, elapsed) {
       pos.setY(i, base[i * 3 + 1] + Math.sin(elapsed * 2.3 + bx * 1.8) * 0.02 * (bx / 1.5));
     }
     pos.needsUpdate = true;
-    f.mesh.geometry.computeVertexNormals();
   }
   if (this._smokeCols) {
     for (const col of this._smokeCols) {

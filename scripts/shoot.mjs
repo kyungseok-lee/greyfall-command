@@ -43,7 +43,7 @@ try {
     await page.mouse.down({ button: 'left' });
     await new Promise((r) => setTimeout(r, 130));
     await page.mouse.up({ button: 'left' });
-    if (i === 4) await page.keyboard.press('KeyR');
+    if (i === 4) { await page.keyboard.down('KeyR'); await new Promise((r) => setTimeout(r, 160)); await page.keyboard.up('KeyR'); }
     if (i === 7) await page.keyboard.up('KeyW');
   }
   await page.keyboard.up('KeyW');
@@ -51,7 +51,7 @@ try {
   log('combat shot');
   await page.screenshot({ path: `${outDir}/13-combat.png` });
 
-  await page.keyboard.press('Digit4');
+  await page.keyboard.down('Digit4'); await new Promise((r) => setTimeout(r, 160)); await page.keyboard.up('Digit4');
   await new Promise((r) => setTimeout(r, 700));
   await page.mouse.down({ button: 'right' });
   await new Promise((r) => setTimeout(r, 800));

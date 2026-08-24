@@ -424,4 +424,4 @@ function tick() {
 
 tick();
 
-window.__GREYFALL = { engine, world, player, enemies };
+window.__GREYFALL = { engine, world, player, enemies, input };

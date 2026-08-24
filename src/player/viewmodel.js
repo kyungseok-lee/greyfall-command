@@ -4,7 +4,9 @@ const MATS = {
   metal: new THREE.MeshStandardMaterial({ color: 0x2a2e33, roughness: 0.38, metalness: 0.8 }),
   metal2: new THREE.MeshStandardMaterial({ color: 0x3a3f45, roughness: 0.5, metalness: 0.65 }),
   poly: new THREE.MeshStandardMaterial({ color: 0x3d423e, roughness: 0.8, metalness: 0.05 }),
-  olive: new THREE.MeshStandardMaterial({ color: 0x4a5240, roughness: 0.85, metalness: 0.05 })
+  olive: new THREE.MeshStandardMaterial({ color: 0x4a5240, roughness: 0.85, metalness: 0.05 }),
+  glove: new THREE.MeshStandardMaterial({ color: 0x4d4338, roughness: 0.92, metalness: 0.02 }),
+  sleeve: new THREE.MeshStandardMaterial({ color: 0x39413a, roughness: 0.95, metalness: 0.02 })
 };
 const DOT_GEO = new THREE.BoxGeometry(0.007, 0.007, 0.005);
 const DOT_MAT = new THREE.MeshBasicMaterial({ color: 0xffc46b });
@@ -28,6 +30,23 @@ function dot(x, y, z) {
   const m = new THREE.Mesh(DOT_GEO, DOT_MAT);
   m.position.set(x, y, z);
   return m;
+}
+
+function hand(x, y, z, rx, ry, rz, scale = 1) {
+  const h = new THREE.Group();
+  h.add(box(0.055 * scale, 0.06 * scale, 0.075 * scale, MATS.glove, 0, 0, 0));
+  h.add(box(0.05 * scale, 0.022 * scale, 0.06 * scale, MATS.glove, 0, -0.036 * scale, 0.01 * scale, 0.35));
+  h.add(box(0.046 * scale, 0.02 * scale, 0.055 * scale, MATS.glove, 0, 0.038 * scale, -0.012 * scale, -0.2));
+  const arm = box(0.062 * scale, 0.062 * scale, 0.24 * scale, MATS.sleeve, 0, -0.02 * scale, 0.16 * scale, 0.25);
+  h.add(arm);
+  h.position.set(x, y, z);
+  h.rotation.set(rx, ry, rz);
+  return h;
+}
+
+function addHands(g, grip, foregrip) {
+  g.add(hand(grip[0] + 0.028, grip[1] + 0.01, grip[2] + 0.02, 0.5, -0.22, 0.12));
+  g.add(hand(foregrip[0] - 0.03, foregrip[1] - 0.015, foregrip[2] + 0.03, 0.55, 0.5, -0.15, 0.95));
 }
 
 function finish(group, id, muzzleY, muzzleZ, magPivot, sightY) {
@@ -67,6 +86,7 @@ function buildAR() {
   g.add(box(0.05, 0.105, 0.028, MATS.poly, 0, -0.008, 0.35));
   g.add(box(0.03, 0.012, 0.05, MATS.metal2, 0.032, 0.03, 0.02));
   g.add(box(0.008, 0.028, 0.008, MATS.metal2, 0, -0.052, 0.032, -0.25));
+  addHands(g, [0, -0.09, 0.1], [0, -0.012, -0.3]);
   return finish(g, 'ar', 0.012, -0.69, mag, 0.106);
 }
 
@@ -90,6 +110,7 @@ function buildSMG() {
   g.add(cyl(0.012, 0.012, 0.14, MATS.metal2, 0, 0.012, 0.16));
   g.add(box(0.012, 0.075, 0.05, MATS.metal2, 0, -0.012, 0.235));
   g.add(box(0.008, 0.026, 0.008, MATS.metal2, 0, -0.048, 0.022, -0.2));
+  addHands(g, [0, -0.085, 0.08], [0, 0.0, -0.31]);
   return finish(g, 'smg', 0.008, -0.46, mag, 0.096);
 }
 
@@ -111,6 +132,7 @@ function buildShotgun() {
   g.add(box(0.034, 0.09, 0.046, MATS.olive, 0, -0.085, 0.09, -0.3));
   g.add(box(0.05, 0.014, 0.06, MATS.metal2, 0, -0.048, 0.02));
   g.add(box(0.008, 0.026, 0.008, MATS.metal2, 0, -0.062, 0.035, -0.2));
+  addHands(g, [0, -0.085, 0.095], [0, -0.03, -0.37]);
   return finish(g, 'shotgun', 0.022, -0.68, null, 0.078);
 }
 
@@ -137,6 +159,7 @@ function buildSniper() {
   g.add(box(0.046, 0.032, 0.12, MATS.olive, 0, 0.046, 0.22));
   g.add(box(0.046, 0.11, 0.05, MATS.poly, 0, -0.008, 0.385));
   g.add(box(0.014, 0.09, 0.014, MATS.metal, 0, -0.05, 0.31));
+  addHands(g, [0, -0.082, 0.135], [0, -0.005, -0.32]);
   return finish(g, 'sniper', 0.008, -1.01, mag, 0.085);
 }
 

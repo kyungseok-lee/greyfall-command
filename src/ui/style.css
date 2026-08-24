@@ -621,7 +621,7 @@ body {
   align-items: center;
   justify-content: center;
   cursor: auto;
-  background: linear-gradient(160deg, rgba(10, 12, 9, 0.62) 0%, rgba(6, 7, 5, 0.86) 78%, rgba(3, 4, 3, 0.94) 100%);
+  background: linear-gradient(160deg, rgba(8, 10, 8, 0.42) 0%, rgba(5, 6, 4, 0.72) 78%, rgba(3, 4, 3, 0.88) 100%);
 }
 
 #menu.active,
