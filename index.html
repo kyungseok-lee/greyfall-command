@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GREYFALL COMMAND</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Black+Ops+One&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:#0a0a08;}</style>
+</head>
+<body>
+  <div id="app"></div>
+
+  <div id="hud">
+    <div id="damage-vignette"></div>
+    <div id="blood-overlay"></div>
+
+    <div id="compass-wrap"><div id="compass-strip"></div></div>
+
+    <canvas id="minimap" width="200" height="200"></canvas>
+
+    <div id="wave-panel">
+      <div class="panel-row"><span class="label">WAVE</span><span id="wave-num">1</span></div>
+      <div class="panel-row"><span class="label">HOSTILES</span><span id="enemies-left">0</span></div>
+      <div class="panel-row"><span class="label">SCORE</span><span id="score-num">0</span></div>
+    </div>
+
+    <div id="crosshair"><span class="ch t"></span><span class="ch b"></span><span class="ch l"></span><span class="ch r"></span><span class="dot"></span></div>
+    <div id="hitmarker"><span class="hm a"></span><span class="hm b"></span><span class="hm c"></span><span class="hm d"></span></div>
+
+    <div id="scope-overlay"><div class="scope-ring"></div><div class="scope-cross-h"></div><div class="scope-cross-v"></div></div>
+
+    <div id="health-wrap">
+      <div class="label">VITALS</div>
+      <div id="health-bar"><div id="health-fill"></div></div>
+      <div id="health-num">100</div>
+    </div>
+
+    <div id="ammo-wrap">
+      <div id="weapon-name">M4 VANDAL</div>
+      <div class="ammo-row"><span id="ammo-mag">30</span><span id="ammo-reserve">/ 120</span></div>
+      <div id="reload-wrap"><div id="reload-bar"></div></div>
+    </div>
+
+    <ul id="killfeed"></ul>
+
+    <div id="banner"><h2 id="banner-main"></h2><p id="banner-sub"></p></div>
+  </div>
+
+  <div id="menu">
+    <div class="menu-inner">
+      <p class="menu-kicker">TASK FORCE 141 // CLASSIFIED</p>
+      <h1 class="menu-title">GREYFALL<span>COMMAND</span></h1>
+      <p class="menu-sub">Hold the compound. Survive the waves.</p>
+      <button id="deploy-btn" class="btn-primary">DEPLOY</button>
+      <div class="controls-grid">
+        <span>WASD MOVE</span><span>SHIFT SPRINT</span><span>C CROUCH</span><span>SPACE JUMP</span>
+        <span>LMB FIRE</span><span>RMB AIM</span><span>R RELOAD</span><span>1-4 WEAPONS</span><span>ESC PAUSE</span>
+      </div>
+      <div class="sens-row">
+        <span>SENSITIVITY</span><input type="range" id="sensitivity-range" min="20" max="300" value="100" /><span id="sens-value">1.00</span>
+      </div>
+      <p id="menu-highscore" class="highscore"></p>
+    </div>
+  </div>
+
+  <div id="pause">
+    <div class="menu-inner small">
+      <h1 class="menu-title small">PAUSED</h1>
+      <button id="resume-btn" class="btn-primary">RESUME</button>
+      <button id="restart-btn" class="btn-secondary">RESTART MISSION</button>
+      <div class="sens-row">
+        <span>SENSITIVITY</span><input type="range" id="sensitivity-range" min="20" max="300" value="100" /><span id="sens-value">1.00</span>
+      </div>
+    </div>
+  </div>
+
+  <div id="gameover">
+    <div class="menu-inner small">
+      <p class="menu-kicker red">MISSION FAILED</p>
+      <h1 class="menu-title small">K.I.A.</h1>
+      <div class="stats-grid">
+        <div><span class="label">SCORE</span><span id="final-score">0</span></div>
+        <div><span class="label">WAVES</span><span id="final-wave">0</span></div>
+        <div><span class="label">KILLS</span><span id="final-kills">0</span></div>
+        <div><span class="label">ACCURACY</span><span id="final-accuracy">0%</span></div>
+        <div><span class="label">TIME</span><span id="final-time">0:00</span></div>
+      </div>
+      <button id="redeploy-btn" class="btn-primary">REDEPLOY</button>
+    </div>
+  </div>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
