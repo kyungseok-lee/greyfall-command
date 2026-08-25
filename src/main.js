@@ -22,6 +22,8 @@ const fx = new FXManager(engine.scene, engine.camera);
 const enemies = new EnemyManager({ scene: engine.scene });
 
 const _rc = new THREE.Raycaster();
+const _blastRc = new THREE.Raycaster();
+const _blastDir = new THREE.Vector3();
 const _tmpM = new THREE.Matrix4();
 const _im = new THREE.Matrix4();
 const _hitNormal = new THREE.Vector3();
@@ -55,8 +57,10 @@ function waveCount(n) {
 const combat = {
   fx,
   audio,
-  raycast(origin, dir, maxDist) {
+  onShot() {
     stats.shots++;
+  },
+  raycast(origin, dir, maxDist) {
     _rc.set(origin, dir);
     _rc.far = maxDist;
     let best = null;
@@ -94,6 +98,7 @@ const combat = {
     return null;
   },
   damageEnemy(enemyRef, dmg, isHead, point) {
+    stats.hits++;
     const killed = enemies.damage(enemyRef, dmg, isHead, point);
     hud.hitmarker(killed);
     audio.hitmarker(killed);
@@ -124,6 +129,7 @@ const player = new Player({
   combat
 });
 enemies.setRefs({ world, player, fx, audio });
+enemies.onPlayerHit = (dmg, fromPos) => player.takeDamage(dmg, fromPos);
 fx.onShake = (t) => player.addShake(t);
 
 {
@@ -146,25 +152,29 @@ player.onDeath = () => {
   deathT = 1.7;
   audio.heartbeat(false);
   hud.lowHealth(false);
+  player.weapons.root.visible = false;
 };
 
 function explodeBarrel(mesh) {
   mesh.userData.gone = true;
+  mesh.visible = false;
+  world.raycastGroup.remove(mesh);
   const p = mesh.position;
   const pos = new THREE.Vector3(p.x, p.y + 0.5, p.z);
-  world.group.remove(mesh);
-  world.raycastGroup.remove(mesh);
-  const bi = world.barrels.indexOf(mesh);
-  if (bi >= 0) world.barrels.splice(bi, 1);
-  for (let i = world.colliders.length - 1; i >= 0; i--) {
-    const b = world.colliders[i];
-    if (
-      Math.abs((b.min.x + b.max.x) / 2 - p.x) < 0.8 &&
-      Math.abs((b.min.z + b.max.z) / 2 - p.z) < 0.8 &&
-      b.max.y - b.min.y < 1.4
-    ) {
-      world.colliders.splice(i, 1);
-      break;
+  if (mesh.userData.collider) {
+    const ci = world.colliders.indexOf(mesh.userData.collider);
+    if (ci >= 0) world.colliders.splice(ci, 1);
+  } else {
+    for (let i = world.colliders.length - 1; i >= 0; i--) {
+      const b = world.colliders[i];
+      if (
+        Math.abs((b.min.x + b.max.x) / 2 - p.x) < 0.8 &&
+        Math.abs((b.min.z + b.max.z) / 2 - p.z) < 0.8 &&
+        b.max.y - b.min.y < 1.4
+      ) {
+        world.colliders.splice(i, 1);
+        break;
+      }
     }
   }
   const dToPlayer = pos.distanceTo(player.position);
@@ -176,7 +186,15 @@ function explodeBarrel(mesh) {
     if (d < 7.5) enemies.damage(s, 140 * (1 - d / 7.5), false, s.pos);
   }
   const pd = player.position.distanceTo(pos);
-  if (pd < 7) player.takeDamage(90 * (1 - pd / 7), pos);
+  if (pd < 7) {
+    let dmg = 90 * (1 - pd / 7);
+    _blastDir.copy(player.position).sub(pos).normalize();
+    _blastRc.set(pos, _blastDir);
+    _blastRc.far = pd;
+    const oc = _blastRc.intersectObject(world.raycastGroup, true);
+    if (oc.length && oc[0].distance < pd - 0.5) dmg *= 0.5;
+    player.takeDamage(dmg, pos);
+  }
   for (const other of world.barrels) {
     if (other.userData.gone) continue;
     if (other.position.distanceTo(pos) < 6) {
@@ -232,6 +250,7 @@ function resetMission() {
   timers.length = 0;
   enemies.clear();
   player.reset();
+  player.weapons.root.visible = true;
   engine.camera.fov = 75;
   engine.camera.updateProjectionMatrix();
   stats.score = 0;
@@ -244,7 +263,15 @@ function resetMission() {
   wave = 0;
   waveActive = false;
   intermissionT = 0;
+  pendingFirstWave = false;
   elapsed = 0;
+  for (const b of world.barrels) {
+    b.visible = true;
+    b.userData.gone = false;
+    b.userData.hp = 30;
+    if (b.parent !== world.raycastGroup) world.raycastGroup.add(b);
+    if (b.userData.collider && world.colliders.indexOf(b.userData.collider) < 0) world.colliders.push(b.userData.collider);
+  }
   audio.heartbeat(false);
   hud.reset();
   hud.setScore(0);
@@ -272,10 +299,8 @@ function pauseGame() {
 
 function resumeGame() {
   if (state !== STATE.PAUSED) return;
-  showOverlay(null);
   audio.resume();
   input.requestLock();
-  state = STATE.PLAYING;
 }
 
 function doGameOver() {
@@ -283,7 +308,8 @@ function doGameOver() {
   setHudVisible(false);
   showOverlay('gameover');
   input.releaseLock();
-  const acc = stats.shots ? Math.round((stats.hits / stats.shots) * 100) : 0;
+  let acc = stats.shots ? Math.round((stats.hits / stats.shots) * 100) : 0;
+  acc = Math.min(100, Math.max(0, acc));
   const mm = Math.floor(stats.time / 60);
   const ss = String(Math.floor(stats.time % 60)).padStart(2, '0');
   $('final-score').textContent = stats.score.toLocaleString();
@@ -291,13 +317,25 @@ function doGameOver() {
   $('final-kills').textContent = stats.kills;
   $('final-accuracy').textContent = acc + '%';
   $('final-time').textContent = mm + ':' + ss;
-  const hs = Math.max(parseInt(localStorage.getItem('greyfall_highscore') || '0'), stats.score);
+  const stored = parseInt(localStorage.getItem('greyfall_highscore') || '0');
+  const hs = Math.max(Number.isFinite(stored) ? stored : 0, stats.score);
   localStorage.setItem('greyfall_highscore', String(hs));
+  $('menu-highscore').textContent = 'HIGH SCORE ' + hs.toLocaleString();
 }
 
 input.onLockChange = (locked) => {
-  if (!locked && state === STATE.PLAYING) pauseGame();
+  if (locked) {
+    if (state === STATE.PAUSED) {
+      showOverlay(null);
+      state = STATE.PLAYING;
+      audio.resume();
+    }
+  } else if (state === STATE.PLAYING) pauseGame();
 };
+
+engine.renderer.domElement.addEventListener('click', () => {
+  if (state === STATE.PLAYING && !input.locked) input.requestLock();
+});
 
 $('deploy-btn').addEventListener('click', () => {
   audio.init();
@@ -407,10 +445,6 @@ function tick() {
     if (waveActive && enemies.allSpawned && enemies.aliveCount === 0) {
       clearWave();
       pendingFirstWave = true;
-    }
-    if (!waveActive && !pendingFirstWave && wave > 0) {
-      intermissionT -= dt;
-      if (intermissionT <= 0) startWave(wave + 1);
     }
   }
 

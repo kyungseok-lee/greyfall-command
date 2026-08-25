@@ -119,7 +119,7 @@ export class Player {
     if (fromPos) {
       const dx = fromPos.x - this._eye.x;
       const dz = fromPos.z - this._eye.z;
-      this.angleLastHit = wrapPi(Math.atan2(-dx, -dz) - this.yaw);
+      this.angleLastHit = wrapPi(this.yaw - Math.atan2(-dx, -dz));
     }
     if (this.health <= 0) {
       this.health = 0;

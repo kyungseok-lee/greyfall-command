@@ -319,6 +319,7 @@ export class World {
   _buildSkyAndLight() {
     const sky = new Sky();
     sky.scale.setScalar(2000);
+    this.skyMesh = sky;
     this.group.add(sky);
     const u = sky.material.uniforms;
     u.turbidity.value = 6;
@@ -338,6 +339,7 @@ export class World {
     const sun = new THREE.DirectionalLight(0xfff0d8, 5.0);
     sun.position.copy(this.sunDir).multiplyScalar(175);
     sun.castShadow = true;
+    this.sunLight = sun;
     sun.shadow.mapSize.set(2048, 2048);
     const sc = sun.shadow.camera;
     sc.left = -95;
@@ -417,14 +419,14 @@ export class World {
     const zebraEW = (xc) => {
       for (let z = -5.2; z <= 5.21; z += 1.15) P.push(this._place(this._quad(2.3, 0.55), xc, 0.014, z));
     };
-    zebraNS(10.2);
-    zebraNS(-10.2);
-    zebraEW(10.2);
-    zebraEW(-10.2);
-    P.push(this._place(this._quad(0.45, 10.8), -8.4, 0.013, 0));
-    P.push(this._place(this._quad(0.45, 10.8), 8.4, 0.013, 0));
-    P.push(this._place(this._quad(10.8, 0.45), 0, 0.013, -8.4));
-    P.push(this._place(this._quad(10.8, 0.45), 0, 0.013, 8.4));
+    zebraNS(4.8);
+    zebraNS(-4.8);
+    zebraEW(4.8);
+    zebraEW(-4.8);
+    P.push(this._place(this._quad(0.45, 10.8), -6.6, 0.013, 0));
+    P.push(this._place(this._quad(0.45, 10.8), 6.6, 0.013, 0));
+    P.push(this._place(this._quad(10.8, 0.45), 0, 0.013, -6.6));
+    P.push(this._place(this._quad(10.8, 0.45), 0, 0.013, 6.6));
     for (let x = 12; x <= 30; x += 3) P.push(this._place(this._quad(0.12, 4.5), x, 0.014, 58.2));
 
     const M = this._bucket('manhole', this.manholeMat, 'metal', false);
@@ -503,8 +505,7 @@ export class World {
       const bw = Math.min(span * 0.8, 11);
       const key = opts.sign.replace(/\W/g, '');
       const bm = this._signMat(opts.sign, opts);
-      const SB = this._bucket('signboard_' + key, bm, 'concrete', false);
-      this._boxOn(SB, f, (t0 + t1) / 2, gh + 0.92, 0.95, bw, 0.2, 0.1);
+      this._boxOn(T, f, (t0 + t1) / 2, gh + 0.92, 0.95, bw, 0.2, 0.1);
       const sg = new THREE.PlaneGeometry(Math.min(bw - 0.3, 10.4), 0.78);
       let ry = 0;
       if (f.n === 'z') ry = f.dr > 0 ? 0 : Math.PI;
@@ -637,19 +638,19 @@ export class World {
     this._windows({ n: 'z', at: 9, dr: -1 }, -62, -55, 4.6, 14.4);
     this._windows({ n: 'x', at: -53, dr: 1 }, 12, 42, 4.6, 14.4, { litP: 0.1 });
 
-    this._cover(-23, -10.6, 0, -1);
-    this._cover(-14, -10.6, 0, -1);
-    this._cover(-10.6, -24, -1, 0);
-    this._cover(-10.6, -34, -1, 0);
-    this._cover(22, -10.6, 0, -1);
-    this._cover(10.6, -28, -1, 0);
-    this._cover(52, -10.6, 0, -1);
-    this._cover(21, 10.6, 0, 1);
-    this._cover(10.6, 28, -1, 0);
-    this._cover(50, 10.6, 0, 1);
-    this._cover(-28, 10.6, 0, 1);
-    this._cover(-10.6, 22, 1, 0);
-    this._cover(-58, 10.6, 0, 1);
+    this._cover(-23, -7.4, 0, 1);
+    this._cover(-14, -7.4, 0, 1);
+    this._cover(-7.4, -24, 1, 0);
+    this._cover(-7.4, -34, 1, 0);
+    this._cover(22, -7.4, 0, 1);
+    this._cover(7.4, -28, -1, 0);
+    this._cover(52, -7.4, 0, 1);
+    this._cover(21, 7.4, 0, -1);
+    this._cover(7.4, 28, -1, 0);
+    this._cover(50, 7.4, 0, -1);
+    this._cover(-28, 7.4, 0, -1);
+    this._cover(-7.4, 22, 1, 0);
+    this._cover(-58, 7.4, 0, -1);
     this._cover(-39.2, -20, 1, 0);
     this._cover(37.2, -26, -1, 0);
     this._cover(35, 26, 1, 0);
@@ -816,10 +817,19 @@ export class World {
     this._hoardRun('z', 62.4, -53, 63, 3.0);
     this._hoardRun('z', -62.4, 9, 39, 3.0);
     this._hoardRun('z', -62.4, -41, -37, 2.7);
+    this._hoardRun('z', -62.4, -9, 9, 3.0);
     this._hoardRun('x', 62.4, -9, 9, 3.0);
     this._hoardRun('x', 62.4, 55, 63, 2.7);
+    this._hoardRun('x', 62.4, -63, -9, 3.0);
+    this._hoardRun('x', 62.4, 9, 55, 3.0);
     this._hoardRun('x', -62.4, -9, 9, 3.0);
     this._hoardRun('x', -62.4, 45, 63, 2.7);
+    this._hoardRun('x', -62.4, 9, 39, 3.0);
+
+    this._addCollider(-63.5, 0, 1, 128, 6);
+    this._addCollider(63.5, 0, 1, 128, 6);
+    this._addCollider(0, -63.5, 129, 1, 6);
+    this._addCollider(0, 63.5, 129, 1, 6);
 
     const pg = new THREE.PlaneGeometry(1.05, 1.5);
     const im = new THREE.InstancedMesh(pg, this.posterMat, 14);
@@ -1393,6 +1403,8 @@ export class World {
       }
       this._addCollider(cx - Math.sin(start) * r * 0.8, cz + Math.cos(start) * r * 0.8, 2.2, 1.2, 1.15);
       this._addCollider(cx + Math.sin(start) * r * 0.8, cz + Math.cos(start) * r * 0.8, 2.2, 1.2, 1.15);
+      this._addCollider(cx - r * 0.95, cz, 1.2, 4.6, 1.15);
+      this._addCollider(cx + r * 0.95, cz, 1.2, 4.6, 1.15);
       this._addCollider(cx, cz - r * 0.92, 3.6, 1.2, 1.15);
       this._cover(cx - Math.sin(start) * (r + 1.3), cz + Math.cos(start) * (r + 1.3), Math.sin(start), Math.cos(start));
       this._cover(cx + Math.sin(start) * (r + 1.3), cz + Math.cos(start) * (r + 1.3), -Math.sin(start), Math.cos(start));
@@ -1517,7 +1529,14 @@ export class World {
       this.group.add(mesh);
       this.raycastGroup.add(mesh);
       this.barrels.push(mesh);
-      if (!sp[2]) this._addCollider(sp[0], sp[1], 0.92, 0.92, 1.15);
+      if (!sp[2]) {
+        const box3 = new THREE.Box3(
+          new THREE.Vector3(sp[0] - 0.46, 0, sp[1] - 0.46),
+          new THREE.Vector3(sp[0] + 0.46, 1.15, sp[1] + 0.46)
+        );
+        this.colliders.push(box3);
+        mesh.userData.collider = box3;
+      }
     }
     this._cover(26.4, -55.6, -0.7, 0.7);
   }
@@ -1660,7 +1679,7 @@ export class World {
     }
     const dg = new THREE.BufferGeometry();
     dg.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-    const dm = new THREE.PointsMaterial({
+    const dm = this._mat({
       size: 0.08,
       map: this._tex[this._tex.length - 1],
       transparent: true,
@@ -1690,6 +1709,7 @@ export class World {
         mesh.castShadow = b.shadowCast;
         mesh.receiveShadow = true;
         mesh.userData.materialType = b.materialType;
+        mesh.renderOrder = b.renderOrder || 0;
         this.group.add(mesh);
         this.raycastGroup.add(mesh);
         for (const g of b.list) g.dispose();
@@ -1699,6 +1719,7 @@ export class World {
           mesh.castShadow = b.shadowCast;
           mesh.receiveShadow = true;
           mesh.userData.materialType = b.materialType;
+          mesh.renderOrder = b.renderOrder || 0;
           this.group.add(mesh);
           this.raycastGroup.add(mesh);
         }
@@ -1770,12 +1791,14 @@ export class World {
     this.scene.fog = null;
     const seen = new Set();
     this.group.traverse((o) => {
-      if (o.geometry && !seen.has(o.geometry)) {
+      if (o.geometry && !o.isSprite && !seen.has(o.geometry)) {
         seen.add(o.geometry);
         o.geometry.dispose();
       }
     });
     for (const m of this._mats) m.dispose();
     for (const t of this._tex) t.dispose();
+    if (this.skyMesh) this.skyMesh.material.dispose();
+    if (this.sunLight && this.sunLight.shadow.map) this.sunLight.shadow.map.dispose();
   }
 }

@@ -705,7 +705,7 @@ export function fenceMeshTexture() {
 }
 
 export function storefrontSignTexture(text, opts = {}) {
-  return canvasTexture(
+  const tex = canvasTexture(
     256,
     (ctx, w, h) => {
       const bg = opts.bg || '#232830';
@@ -761,4 +761,7 @@ export function storefrontSignTexture(text, opts = {}) {
     },
     { w: 512, h: 128, anisotropy: 8 }
   );
+  tex.wrapS = THREE.ClampToEdgeWrapping;
+  tex.wrapT = THREE.ClampToEdgeWrapping;
+  return tex;
 }

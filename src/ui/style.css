@@ -232,6 +232,7 @@ body {
 #crosshair .ch {
   position: absolute;
   background: rgba(240, 240, 235, 0.92);
+  filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.9));
 }
 
 #crosshair .ch.t,
@@ -261,6 +262,7 @@ body {
   top: -1.5px;
   border-radius: 50%;
   background: rgba(240, 240, 235, 0.95);
+  filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.9));
 }
 
 #hitmarker {
@@ -281,6 +283,7 @@ body {
   left: -1px;
   top: -5px;
   background: #fff;
+  box-shadow: 0 0 2px rgba(0, 0, 0, 0.9);
 }
 
 #hitmarker .hm.a { transform: rotate(-45deg) translateY(-11px); }
@@ -317,7 +320,7 @@ body {
 #scope-overlay {
   inset: 0;
   display: none;
-  z-index: 7;
+  z-index: 9;
   background: radial-gradient(circle at 50% 50%, transparent 0, transparent 39.4vmin, rgba(2, 3, 2, 0.99) 40.4vmin);
 }
 
@@ -611,6 +614,14 @@ body {
   text-shadow: 0 1px 10px rgba(0, 0, 0, 0.8);
 }
 
+#banner-main {
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.85), 0 0 2px rgba(0, 0, 0, 0.9);
+}
+
+#banner-sub {
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.85), 0 0 2px rgba(0, 0, 0, 0.9);
+}
+
 #menu,
 #pause,
 #gameover {
@@ -622,12 +633,6 @@ body {
   justify-content: center;
   cursor: auto;
   background: linear-gradient(160deg, rgba(8, 10, 8, 0.42) 0%, rgba(5, 6, 4, 0.72) 78%, rgba(3, 4, 3, 0.88) 100%);
-}
-
-#menu.active,
-#pause.active,
-#gameover.active {
-  display: flex;
 }
 
 .menu-inner {

@@ -140,7 +140,7 @@ export class Engine {
   }
 
   render() {
-    this.vignette.uniforms.uTime.value = performance.now() * 0.001;
+    this.vignette.uniforms.uTime.value = (performance.now() * 0.001) % 3600;
     this.composer.render();
   }
 

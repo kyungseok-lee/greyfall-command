@@ -42,10 +42,14 @@ function dot(x, y, z) {
 }
 
 function rail(g, z0, z1, y, w = 0.048) {
-  const n = Math.floor((z0 - z1) / 0.022);
-  g.add(box(w, 0.008, z0 - z1, MATS.steel, 0, y, (z0 + z1) / 2));
+  const len = Math.abs(z0 - z1);
+  const zStart = Math.min(z0, z1);
+  const zEnd = Math.max(z0, z1);
+  const n = Math.floor(len / 0.022);
+  g.add(box(w, 0.008, len, MATS.steel, 0, y, (z0 + z1) / 2));
   for (let i = 0; i < n; i++) {
-    g.add(box(w + 0.003, 0.006, 0.011, MATS.steelWorn, 0, y + 0.004, z0 - 0.008 - i * 0.022));
+    const z = Math.min(zStart + 0.008 + i * 0.022, zEnd - 0.006);
+    g.add(box(w + 0.003, 0.006, 0.011, MATS.steelWorn, 0, y + 0.004, z));
   }
 }
 
@@ -60,11 +64,14 @@ function hand(side, gx, gy, gz, srx, sry, reach = 0.17, down = 0.03) {
   return h;
 }
 
-function finish(group, id, muzzleY, muzzleZ, magPivot, sightY) {
+function finish(group, id, muzzleY, muzzleZ, magPivot, sightY, ejectPos) {
   const muzzle = new THREE.Object3D();
   muzzle.position.set(0, muzzleY, muzzleZ);
   group.add(muzzle);
-  return { id, group, muzzle, mag: magPivot, magY: magPivot ? magPivot.position.y : 0, sightY };
+  const eject = new THREE.Object3D();
+  eject.position.set(ejectPos[0], ejectPos[1], ejectPos[2]);
+  group.add(eject);
+  return { id, group, muzzle, eject, mag: magPivot, magY: magPivot ? magPivot.position.y : 0, sightY };
 }
 
 function buildAR() {
@@ -121,7 +128,7 @@ function buildAR() {
   g.add(hand('R', 0.03, -0.1, 0.105, 0.55, -0.25));
   g.add(hand('L', -0.035, -0.03, -0.31, 0.5, 0.55, 0.16, 0.05));
 
-  return finish(g, 'ar', 0.012, -0.7, mag, 0.106);
+  return finish(g, 'ar', 0.012, -0.7, mag, 0.106, [0.033, 0.015, -0.05]);
 }
 
 function buildSMG() {
@@ -161,7 +168,7 @@ function buildSMG() {
   g.add(hand('R', 0.028, -0.09, 0.065, 0.55, -0.25));
   g.add(hand('L', -0.032, -0.035, -0.16, 0.5, 0.55, 0.16, 0.05));
 
-  return finish(g, 'smg', 0.006, -0.345, mag, 0.096);
+  return finish(g, 'smg', 0.006, -0.345, mag, 0.096, [0.028, 0.01, -0.02]);
 }
 
 function buildShotgun() {
@@ -197,7 +204,7 @@ function buildShotgun() {
   g.add(hand('R', 0.028, -0.1, 0.08, 0.55, -0.25));
   g.add(hand('L', -0.038, -0.045, -0.33, 0.45, 0.55, 0.16, 0.04));
 
-  return finish(g, 'shotgun', 0.02, -0.655, null, 0.078);
+  return finish(g, 'shotgun', 0.02, -0.655, null, 0.078, [0.03, 0.0, -0.02]);
 }
 
 function buildSniper() {
@@ -255,7 +262,7 @@ function buildSniper() {
   g.add(hand('R', 0.028, -0.1, 0.08, 0.55, -0.25));
   g.add(hand('L', -0.035, -0.05, -0.24, 0.5, 0.55, 0.16, 0.05));
 
-  return finish(g, 'sniper', 0.012, -0.83, mag, 0.085);
+  return finish(g, 'sniper', 0.012, -0.83, mag, 0.098, [0.033, 0.025, -0.02]);
 }
 
 export function buildWeaponModels() {
@@ -264,9 +271,8 @@ export function buildWeaponModels() {
 
 export function disposeWeaponModels(models) {
   for (const id in models) {
-    models[id].group.traverse((o) => o.geometry && o.geometry.dispose());
+    models[id].group.traverse((o) => {
+      if (o.geometry && o.geometry !== DOT_GEO) o.geometry.dispose();
+    });
   }
-  DOT_GEO.dispose();
-  for (const k in MATS) MATS[k].dispose();
-  DOT_MAT.dispose();
 }

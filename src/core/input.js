@@ -49,7 +49,10 @@ export class Input {
   }
 
   requestLock() {
-    if (!this.locked) this.dom.requestPointerLock();
+    if (!this.locked) {
+      const p = this.dom.requestPointerLock();
+      if (p && p.catch) p.catch(() => {});
+    }
   }
 
   releaseLock() {

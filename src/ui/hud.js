@@ -64,16 +64,6 @@ export class HUD {
     this.mmSweep = 0;
 
     window.addEventListener('resize', () => { this._wrapW = 0; });
-    document.querySelectorAll('.sens-row').forEach((row) => {
-      const input = row.querySelector('input[type="range"]');
-      const out = row.querySelector('span:last-child');
-      if (!input || !out) return;
-      const sync = () => {
-        out.textContent = (parseInt(input.value, 10) / 100).toFixed(2);
-      };
-      input.addEventListener('input', sync);
-      sync();
-    });
 
     this.reset();
   }

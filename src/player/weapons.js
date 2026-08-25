@@ -161,6 +161,11 @@ export class WeaponSystem {
   cancelReload() {
     if (!this.reload.active) return;
     this.reload.active = false;
+    const m = this.models[this.currentId];
+    if (m.mag) {
+      m.mag.position.y = m.magY;
+      m.mag.rotation.x = 0;
+    }
     this.onReloadProgress?.(null);
   }
 
@@ -330,6 +335,7 @@ export class WeaponSystem {
   }
 
   shoot(s) {
+    this.combat?.onShot?.();
     const w = W[this.currentId];
     s.mag--;
     s.bloom = Math.min(BLOOM_MAX, s.bloom + w.bloomPerShot);
@@ -378,8 +384,7 @@ export class WeaponSystem {
       if (this.shotCounter % w.tracerEvery === 0) c.fx.tracer(muzzle, end);
     }
 
-    const eject = T_A.set(0.26, -0.17, -0.38);
-    cam.localToWorld(eject);
+    const eject = this.models[this.currentId].eject.getWorldPosition(T_A);
     c.fx.shellCasing(eject, T_RT);
 
     const kick = w.recoilKick;
