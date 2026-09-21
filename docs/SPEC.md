@@ -1,174 +1,96 @@
-# GREYFALL COMMAND - AAA-quality browser FPS (Three.js)
+# GREYFALL COMMAND implementation guide
 
-Wave-based military FPS. Golden-hour desert compound. CoD-style feel: snappy movement, ADS,
-recoil, regenerating health, kill feed, minimap, waves of AI soldiers, explosive barrels.
+The current game is a desktop browser FPS in a procedural urban city block. This
+reference describes the implemented modules; the initial parallel-development
+assignments are no longer module ownership restrictions. See [README](../README.md)
+for installation, controls and local QA commands.
 
-## Hard rules for every module
+## Runtime and conventions
 
-- ES2022 ESM. Import three as `import * as THREE from 'three'`, addons as `'three/addons/...'`.
-- NO external assets (no image/audio files). All textures procedural (CanvasTexture), all audio synthesized (WebAudio).
-- No comments unless truly needed. Clean production code.
-- Performance budget: total draw calls target < 350. Use InstancedMesh and shared geometries/materials.
-- Only import from your own files plus `src/core/contracts.js`. Never import other agents' modules.
-- Do NOT modify files you do not own. Do NOT create a main entry point; `src/main.js` is owned by the integrator.
-- Units: meters, seconds, radians. +Y up. Player eye height ~1.7m.
-- Every class must have a `dispose()` that frees geometries/materials where practical.
+- ES modules with an ES2022 Vite build target. Import Three.js from `three` and its
+  addons from `three/addons/...`.
+- `src/core/contracts.js` exports **CONFIG**. Weapon definitions are in
+  `CONFIG.WEAPONS`; there is no separate `WEAPONS` export.
+- World coordinates use meters, seconds and radians, with +Y up. Standing eye
+  height is 1.7 m; crouched eye height is 1.15 m.
+- World geometry, texture maps and sound are generated locally. `index.html`
+  separately loads Black Ops One and Rajdhani from Google Fonts; the game is not
+  completely independent of external resources.
+- Shared geometry, instancing, reusable soldier rigs and FX pools limit allocations.
+  Performance is measured with `scripts/fps.mjs`; no fixed draw-call result is
+  guaranteed for every scene or device.
 
-## Shared config: src/core/contracts.js (already written, read-only)
+## Module interfaces
 
-Contains CONFIG (player movement/health, weapon stats, enemy stats, wave rules) and WEAPONS data.
-Read it and use its values everywhere. Do not duplicate tuning numbers in your modules.
+| Module | Construction and main interface |
+| --- | --- |
+| `src/core/engine.js` | `new Engine(container)` creates the scene, camera, renderer and postprocessing. `resize()`, `render()`, `setDamageIntensity(value)`, `dispose()`. |
+| `src/core/input.js` | `new Input(canvas)` tracks keys, mouse, wheel and pointer lock. `isDown(code)`, `consumeMouse()`, `consumeWheel()`, `requestLock()`, `releaseLock()`, `setSensitivity(value)`; `onLockChange(locked)`. |
+| `src/world/world.js` | `new World(scene)` builds buildings, streets, construction/rubble areas, cover, vehicles, barrels and atmosphere. `update(dt, elapsed)`, `dispose()`. |
+| `src/player/player.js` | `new Player({ camera, input, world, scene, combat })` creates its `WeaponSystem` and connects combat. `update(dt)`, `reset()`, `takeDamage(amount, fromPos)`, `addShake(trauma)`, `dispose()`. |
+| `src/player/weapons.js` | `new WeaponSystem({ camera, input })`; `setCombat(combat)`, `equip(id)`, `equipNext(direction)`, `tryReload()`, `update(dt)`, `reset()`, `dispose()`. IDs: `ar`, `smg`, `shotgun`, `sniper`. |
+| `src/enemies/enemies.js` | `new EnemyManager({ scene })`; `setRefs({ world, player, fx, audio })`, `spawnWave(count)`, `damage(enemy, amount, isHead, point)`, `minimapEnemies()`, `update(dt)`, `clear()`, `dispose()`. |
+| `src/fx/fx.js` | `new FXManager(scene, camera)`; `muzzleFlash(pos, dir, scale)`, `tracer(from, to)`, `impact(point, normal, materialType)`, `blood(point, dir)`, `shellCasing(pos, rightDir)`, `explosion(pos, trauma)`, `update(dt)`, `dispose()`. |
+| `src/core/audio.js` | `new AudioManager()`; `init()` from a user gesture, `resume()`, `suspend()`, weapon/impact/footstep cues, `heartbeat(on)`, `startAmbient()`, `stopAmbient()`, `update(dt)`, `dispose()`. |
+| `src/ui/hud.js` | `new HUD(root)` defaults to `#hud` and imports `style.css`. Health/ammo/weapon/wave/score setters, `setReload(progressOrNull)`, hit/damage feedback, scope/crosshair, compass/minimap, `update(dt)`, `reset()`. |
 
-## Exact module contracts
+`World` exposes `colliders` (`THREE.Box3[]`), `raycastGroup`, `coverPoints`,
+`spawnPoints`, `playerSpawn`, `minimapRects` and `barrels`. A barrel has
+`userData.barrel`, `hp`, `gone` and, for upright barrels, a stored `collider`.
+The barrel array retains destroyed meshes for mission reset; use `gone` or
+visibility to count active barrels.
 
-### src/world/world.js  (owner A)
-```js
-export class World {
-  constructor(scene)            // builds entire environment synchronously
-  update(dt, elapsed)           // animate flags/cloth/dust ambience
-  colliders        // THREE.Box3[] for player+enemy movement collision (walls, crates, buildings)
-  raycastGroup     // THREE.Group of bullet-hittable meshes; each mesh userData.materialType in {'concrete','metal','sand','wood','barrel'}
-  coverPoints      // [{pos:THREE.Vector3, dir:THREE.Vector3}] AI cover spots beside obstacles
-  spawnPoints      // THREE.Vector3[] enemy spawn locations away from center
-  playerSpawn      // THREE.Vector3
-  minimapRects     // [{x,z,w,d,rot?}] top-down footprints for minimap drawing
-  barrels          // Mesh[] explosive barrels; userData.explosive=true, userData.hp=30
-}
-```
+`Player.position` is the eye position. Its public state includes `yaw`, `pitch`,
+`health`, `maxHealth`, `alive`, `adsT`, `isSprinting`, `damageFlash01` and
+`angleToLastHit`. Callbacks are `onDamaged(hp)`, `onDeath()` and `onFootstep()`.
+Crouch toggles with C; movement includes acceleration, friction, jump buffering,
+coyote time, collision step-up, head bob and trauma-based camera shake.
 
-### src/player/player.js  (owner B)
-```js
-export class Player {
-  constructor({ camera, input, world })   // camera becomes the FPS view; adds view-model group to camera
-  position       // Vector3 eye position (read-only usage by others)
-  yaw, pitch     // radians
-  health, maxHealth, alive
-  weapons        // WeaponSystem instance (same owner B)
-  addShake(t)    // trauma-based camera shake 0..1
-  takeDamage(amount, fromPos)
-  onDamaged?: (hp)=>void      // assigned by integrator
-  onDeath?: ()=>void
-  onFootstep?: ()=>void
-  update(dt)
-  reset()
-}
-```
+`WeaponSystem` exposes `currentId`, `ammo`, `state`, `root`, `adsT`, `isAds`,
+`getCrosshairPx()` and `setAdsChanged(callback)`. HUD callbacks are
+`onAmmoChange(mag, reserve)`, `onReloadProgress(progressOrNull)` and
+`onWeaponSwitched(id, name)`. Hip FOV is 75; ADS FOV comes from
+`CONFIG.WEAPONS` (AR 58, SMG 60, shotgun 62, sniper 22). The integrator shows the
+sniper scope when `player.adsT > 0.85`.
 
-### src/player/weapons.js  (owner B)
-```js
-export class WeaponSystem {
-  constructor({ camera, input })
-  setCombat(combat)   // combat = { raycast(origin,dir,maxDist)->hit|null, damageEnemy(enemyRef,dmg,isHead,point,dir), damageBarrel(barrelMesh,dmg,point), fx, audio }
-  // hit = { point, normal, type:'world'|'enemy'|'barrel', enemy?, isHead?, materialType? }
-  equip(id)           // 'ar' | 'smg' | 'shotgun' | 'sniper' (keys 1-4 handled here via input)
-  currentId
-  get ammo()          // { mag, reserve } of current weapon
-  onAmmoChange?: (mag,reserve)=>void
-  onReloadProgress?: (p01|null)=>void
-  onWeaponSwitched?: (id,name)=>void
-  setAdsChanged?(cb)  // cb(isAds:boolean) -> HUD crosshair/scope toggles; sniper shows scope overlay
-  update(dt)
-  reset()
-}
-```
-Weapon feel requirements: procedural low-poly-but-crisp view models per weapon attached to camera;
-ADS lerp (FOV 75->60, sniper->24 with scope overlay via onAdsChange), recoil kick + recovery spring,
-per-weapon spread/bloom, tracers + muzzle flash via combat.fx, shell eject, reload animation,
-sprint tilt, idle sway, walk bob. Fire rates/damage from CONFIG.WEAPONS.
+`EnemyManager.hitGroup` contains hitboxes with `userData.enemyRef` and
+`userData.isHead`. `remainingInWave` includes queued and living soldiers;
+`allSpawned` becomes true when the queue is empty. `spawnWave(count)` receives the
+enemy count, not the displayed wave number; that same value currently drives the
+manager's difficulty state. `damage()` returns whether the hit killed the soldier
+and invokes `onKill(enemy, isHead)`. Successful enemy fire invokes
+`onPlayerHit(damage, fromPos)`, connected to the player's damage handler in `main.js`.
 
-### src/enemies/enemies.js  (owner C)
-```js
-export class EnemyManager {
-  constructor({ scene })
-  setRefs({ world, player, fx, audio })   // called once after construction
-  spawnWave(n)         // count from CONFIG.WAVE; spawns at world.spawnPoints farthest-ish from player
-  update(dt)
-  hitGroup             // Group of invisible-ish hitbox meshes; userData.enemyRef, head box userData.isHead=true
-  damage(enemyRef, amount, isHead, point)  // returns true if killed
-  aliveCount
-  remainingInWave      // spawned-alive count for HUD (integrator computes wave end when 0 and allSpawned)
-  allSpawned           // bool
-  clear()              // remove all enemies instantly
-  onKill?: (enemyRef, isHead)=>void
-  onPlayerHit?: (dmg, fromPos)=>void
-  minimapEnemies(): Vector3[]
-  dispose()
-}
-```
-AI requirements: soldier mesh (helmet, vest, limbs, rifle) with procedural walk/aim/death animations,
-states patrol/advance/combat/reposition using world.coverPoints, line-of-sight checks against
-world.raycastGroup via Raycaster, burst fire at player with spread; on successful shot call
-onPlayerHit(dmg, fromPos); misses produce fx.impact near player. Health/flinch/headshot multiplier
-from CONFIG.ENEMY. Deaths: ragdoll-ish fall then sink+remove after 4s. Slight difficulty scaling per wave.
+## Integration and game state
 
-### src/fx/fx.js  (owner D)
-```js
-export class FXManager {
-  constructor(scene, camera)
-  muzzleFlash(pos, dir, scale=1)     // additive sprite + brief PointLight
-  tracer(from, to)                   // glowing projectile streak
-  impact(point, normal, materialType)// sparks/dust puff + pooled decal dot
-  blood(point, dir)
-  explosion(pos)                     // flash light, smoke column, sparks, shockwave ring; also calls this.onShake?.(0.6)
-  shellCasing(pos, rightDir)
-  onShake?: (t:number)=>void         // wire to player.addShake
-  update(dt)
-  dispose()
-}
-```
-Pools everything. Decals capped ~64 (fade oldest out). Muzzle light budget 2 concurrent.
+`src/main.js` constructs and connects the modules. The states are `MENU`,
+`PLAYING`, `DYING`, `PAUSED` and `GAMEOVER`. Death enters a 1.7-second sequence;
+its simulation runs at 0.45 speed before the game-over overlay. Deploy/redeploy
+reset the mission and request pointer lock. Losing pointer lock during play
+pauses simulation and audio; Resume requests the lock again.
 
-### src/core/audio.js  (owner D)
-```js
-export class AudioManager {
-  init()                    // create AudioContext (call from user gesture); safe to call again
-  resume(); suspend()
-  shootRifle(); shootSMG(); shootShotgun(); shootSniper(); dryFire();
-  reloadClick(stage)        // stage 0|1|2
-  enemyShot(dist)           // distance-attenuated crack
-  impact(materialType)
-  hitmarker(kill)
-  explosion(dist)
-  footstep(sprinting); land()
-  hurt(); heartbeat(on)     // low-health pulse loop toggle
-  waveHorn(); uiClick(); victory sting?
-  startAmbient(); stopAmbient()
-  update(dt)                // nothing heavy
-  dispose()
-}
-```
-All synthesized. Gunshots: layered noise burst + body thump + tail. Keep levels sane (-6dB peaks).
+The combat adapter passed to weapons exposes `raycast`, `damageEnemy`,
+`damageBarrel`, `onShot`, `fx` and `audio`. Raycasts return `null` or a world,
+enemy or barrel hit. Enemy hits include the enemy and headshot flag; barrel hits
+include `barrelMesh`; world hits include the material type.
 
-### src/ui/hud.js  (owner D)
-```js
-export class HUD {
-  constructor(root=document.getElementById('hud'))
-  setHealth(hp,max); setAmmo(mag,reserve); setWeapon(name);
-  setWave(w); setEnemiesLeft(n); setScore(s);
-  killfeed(text, headshot); hitmarker(kill);
-  damageFrom(angleToSourceRad); flashDamage(intensity01);
-  crosshairSpread(px); showCrosshair(b); scopeOverlay(b);
-  banner(main, sub, ms=2200);
-  compass(yawRad);                 // N/E/S/W strip
-  minimap(playerPos, playerYaw, enemies[], rects[]);  // draws #minimap canvas
-  lowHealth(on);
-  reset()
-}
-```
-Also owns `src/ui/style.css` (imported from hud.js). Visual language: modern military HUD,
-thin lines, amber/olive accents, subtle glass panels, Rajdhani/Black Ops One via Google Fonts link
-already in index.html. All element IDs already exist in index.html - use them exactly:
-crosshair, hitmarker, scope-overlay, health-fill, health-num, ammo-mag, ammo-reserve, weapon-name,
-reload-bar, reload-wrap, minimap, compass-strip, wave-num, enemies-left, score-num, killfeed, banner,
-banner-sub, damage-vignette, blood-overlay, hud, menu, pause, gameover, deploy-btn, resume-btn,
-restart-btn, redeploy-btn, sensitivity-range, sens-value, final-score, final-wave, final-kills,
-final-accuracy, final-time, menu-highscore.
-```
+The displayed wave starts at 1 and supplies `4 + 2 * (wave - 1)` soldiers, with
+at most 9 alive at once. Clearing a wave restores up to 40 health and half each
+weapon's maximum reserve, capped at that maximum. A 6-second intermission precedes
+the next wave. The player also regenerates health after the configured delay.
 
-## Integration notes (integrator owns src/main.js)
+Direct weapon kills award 100 points plus 50 for a headshot. Consecutive kills
+less than 4 seconds apart add 25 points per streak step, capped at 125 bonus
+points; this is an additive bonus, not a score multiplier. Barrel damage reaches
+enemies through `EnemyManager.damage()` and does not pass through the direct-hit
+score callback. The accuracy statistic counts successful damage calls relative
+to fired rounds and is clamped to 0–100% in the final display.
 
-Game states: MENU -> PLAYING <-> PAUSED -> GAMEOVER. Pointer lock on DEPLOY/RESUME.
-Wave director in main: startWave(n), when EnemyManager reports cleared -> intermission banner ->
-partial heal + reserve refill -> next wave. Score: kill 100 (+50 headshot bonus), streak x1..x5.
-Track shots fired/hits for accuracy stat. localStorage highscore key 'greyfall_highscore'.
-```
+Barrels start with 30 HP. Explosions damage nearby soldiers and the player;
+intervening world geometry halves player blast damage. Nearby barrels chain
+with a delay. Restart restores barrel visibility, HP, hit meshes and stored
+colliders. The HUD provides mission score, wave, kills, accuracy and time.
+
+Browser storage keys are `greyfall_highscore` and `greyfall_sens`. Progress within
+a mission is not saved. `window.__GREYFALL` exposes engine/world/player/enemies/input
+for local inspection and the repository's QA scripts.
